@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const quoteRoutes = require('./routes/quoteRoutes');
 const userRoutes = require('./routes/userRoutes');
 const blogRoutes = require('./routes/blogRoutes');
+const productRoutes = require('./routes/productRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -34,6 +35,7 @@ app.use(express.json());
 app.use('/api', quoteRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/blog', blogRoutes);
+app.use('/api/products', productRoutes);
 
 app.get('/', (req, res) => {
   res.send('IT Service Pro Backend Running');
