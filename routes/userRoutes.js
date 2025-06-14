@@ -27,6 +27,9 @@ router.post('/request-password-reset', requestPasswordReset);
 // POST /api/users//reset-password
 router.post('/reset-password', resetPassword);
 
+// PUT /api/users/:id/reset-password 
+router.put('/:id/reset-password', auth, authorizeRoles, userController.resetUserPassword);
+
 // User routes
 // GET /api/users/me
 router.get('/me', auth, getProfile);
