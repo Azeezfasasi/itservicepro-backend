@@ -63,7 +63,7 @@ exports.requestPasswordReset = async (req, res) => {
         pass: process.env.GMAIL_PASS
       }
     });
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://itservicepro-backend.onrender.com'}/reset-password/${token}`;
     await transporter.sendMail({
       to: user.email,
       from: process.env.GMAIL_USER,
