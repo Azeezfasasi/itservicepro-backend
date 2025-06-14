@@ -10,7 +10,8 @@ const {
   updateProfile,
   editUser,
   deleteUser,
-  disableUser
+  disableUser,
+  resetUserPassword
 } = require('../controllers/userController');
 const { auth, authorizeRoles } = require('../middleware/auth');
 
@@ -28,7 +29,7 @@ router.post('/request-password-reset', requestPasswordReset);
 router.post('/reset-password', resetPassword);
 
 // PUT /api/users/:id/reset-password 
-router.put('/:id/reset-password', auth, authorizeRoles, userController.resetUserPassword);
+router.put('/:id/reset-password', auth, authorizeRoles, resetUserPassword);
 
 // User routes
 // GET /api/users/me
