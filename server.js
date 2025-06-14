@@ -20,7 +20,10 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // CORS middleware (only once, with your options)
 app.use(cors({
-  origin: 'http://localhost:5173', // your frontend URL
+  origin: [
+    'https://itservicepro.netlify.app',
+    'http://localhost:5173'
+  ], // your frontend URL
   credentials: true, // if you use cookies/auth
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
