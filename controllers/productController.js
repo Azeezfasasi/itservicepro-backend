@@ -173,7 +173,7 @@ exports.createProduct = async (req, res) => {
       price,
       category,
       brand,
-      sku,
+      // sku,
       stockQuantity,
       isFeatured,
       discountPercentage,
