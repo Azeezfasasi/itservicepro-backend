@@ -1,179 +1,104 @@
 const Product = require('../models/Product');
-const Category = require('../models/Category');
-const slugify = require('slugify');
-const multer = require('multer');
+const Category = require('../models/Category'); // For category validation
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+const slugify = require('slugify');
 
-// Set up multer for file uploads
-const storage = multer.diskStorage({
+// --- Multer Setup for Product Images ---
+const productStorage = multer.diskStorage({
   destination: function(req, file, cb) {
     const uploadDir = 'public/uploads/products';
-    // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
   filename: function(req, file, cb) {
-    cb(null, `${Date.now()}-${slugify(file.originalname, { lower: true })}`);
+    cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '-').toLowerCase()}`);
   }
 });
 
-const fileFilter = (req, file, cb) => {
+const productFileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new Error('Not an image! Please upload only images.'), false);
+    cb(new Error('Not an image! Please upload only images for products.'), false);
   }
 };
 
-const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
-});
+// Middleware for handling multiple product image uploads
+exports.uploadProductImages = multer({
+  storage: productStorage,
+  fileFilter: productFileFilter,
+  limits: { fileSize: 1024 * 1024 * 10 } // 10MB limit per image
+}).array('images', 5); // Allow up to 5 images per product
 
-exports.uploadProductImages = upload.array('images', 10);
 
-// Create a new product
-exports.createProduct = async (req, res) => {
-  try {
-    // Generate slug from product name
-    const slug = slugify(req.body.name, { lower: true });
-    
-    // Process uploaded images
-    let uploadedFiles = [];
-    let featuredImage = '';
-    
-    if (req.files && req.files.length > 0) {
-      uploadedFiles = req.files.map(file => `/uploads/products/${file.filename}`);
-      featuredImage = uploadedFiles[0]; // First image is featured by default
-    }
-    
-    // Check if category exists
-    const categoryExists = await Category.findById(req.body.category);
-    if (!categoryExists) {
-      return res.status(400).json({ error: 'Invalid category' });
-    }
-    
-    // Create new product object
-    const productData = {
-      ...req.body,
-      slug,
-      images: uploadedFiles,
-      featuredImage
-    };
-    
-    // Handle price and stock as numbers
-    if (req.body.price) productData.price = Number(req.body.price);
-    if (req.body.originalPrice) productData.originalPrice = Number(req.body.originalPrice);
-    if (req.body.countInStock) productData.countInStock = Number(req.body.countInStock);
-    if (req.body.discountPercentage) productData.discountPercentage = Number(req.body.discountPercentage);
-    
-    // Handle arrays that might come as strings
-    if (req.body.colors && typeof req.body.colors === 'string') {
-      productData.colors = req.body.colors.split(',').map(color => color.trim());
-    }
-    
-    if (req.body.sizes && typeof req.body.sizes === 'string') {
-      productData.sizes = req.body.sizes.split(',').map(size => size.trim());
-    }
-    
-    if (req.body.tags && typeof req.body.tags === 'string') {
-      productData.tags = req.body.tags.split(',').map(tag => tag.trim());
-    }
-    
-    // Convert boolean strings to actual booleans
-    if (req.body.isFeatured) {
-      productData.isFeatured = req.body.isFeatured === 'true';
-    }
-    
-    if (req.body.isOnSale) {
-      productData.isOnSale = req.body.isOnSale === 'true';
-    }
-    
-    // Create the product
-    const product = new Product(productData);
-    await product.save();
-    
-    res.status(201).json(product);
-  } catch (err) {
-    console.error('Error creating product:', err);
-    res.status(500).json({ 
-      error: 'Failed to create product', 
-      details: err.message 
-    });
-  }
-};
+// --- Product Controller Functions ---
 
-// Get all products with filtering, sorting, and pagination
+// Get all products
 exports.getAllProducts = async (req, res) => {
   try {
-    // FILTERING
-    const queryObj = { ...req.query };
-    const excludedFields = ['page', 'sort', 'limit', 'fields', 'search'];
-    excludedFields.forEach(field => delete queryObj[field]);
-    
-    // Advanced filtering (for range queries like price[gte]=10)
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
-    
-    // Base query
-    let query = Product.find(JSON.parse(queryStr)).populate('category');
-    
-    // Search functionality
-    if (req.query.search) {
-      query = query.find({ $text: { $search: req.query.search } });
-    }
-    
-    // Filter by category slug
-    if (req.query.categorySlug) {
-      const category = await Category.findOne({ slug: req.query.categorySlug });
-      if (category) {
-        query = query.find({ category: category._id });
+    const { category, brand, minPrice, maxPrice, status, sortBy, search, page = 1, limit = 10 } = req.query;
+    const query = {};
+
+    if (category) {
+      // Find category by slug or ID
+      const categoryDoc = await Category.findOne({ $or: [{ _id: category }, { slug: category }] });
+      if (categoryDoc) {
+        query.category = categoryDoc._id;
+      } else {
+        return res.status(404).json({ error: 'Category not found' });
       }
     }
-    
-    // SORTING
-    if (req.query.sort) {
-      const sortBy = req.query.sort.split(',').join(' ');
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort('-dateCreated'); // Default sort by newest
+    if (brand) query.brand = new RegExp(brand, 'i'); // Case-insensitive brand search
+    if (status) query.status = status;
+
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = parseFloat(minPrice);
+      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
     }
-    
-    // FIELD LIMITING
-    if (req.query.fields) {
-      const fields = req.query.fields.split(',').join(' ');
-      query = query.select(fields);
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { brand: { $regex: search, $options: 'i' } },
+        { sku: { $regex: search, $options: 'i' } },
+      ];
     }
-    
-    // PAGINATION
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const skip = (page - 1) * limit;
-    
-    query = query.skip(skip).limit(limit);
-    
-    // Execute query
-    const products = await query;
-    
-    // Get total count for pagination
-    const totalProducts = await Product.countDocuments(JSON.parse(queryStr));
-    
+
+    const sortOptions = {};
+    if (sortBy === 'priceAsc') sortOptions.price = 1;
+    else if (sortBy === 'priceDesc') sortOptions.price = -1;
+    else if (sortBy === 'nameAsc') sortOptions.name = 1;
+    else if (sortBy === 'nameDesc') sortOptions.name = -1;
+    else if (sortBy === 'newest') sortOptions.createdAt = -1;
+    else if (sortBy === 'oldest') sortOptions.createdAt = 1;
+    else if (sortBy === 'rating') sortOptions.rating = -1;
+    else sortOptions.createdAt = -1; // Default sort by newest
+
+    const products = await Product.find(query)
+      .sort(sortOptions)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const totalProducts = await Product.countDocuments(query);
+    const totalPages = Math.ceil(totalProducts / limit);
+
     res.status(200).json({
+      data: products,
       totalProducts,
-      totalPages: Math.ceil(totalProducts / limit),
-      currentPage: page,
-      results: products.length,
-      data: products
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
     });
   } catch (err) {
-    console.error('Error fetching products:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch products', 
-      details: err.message 
+    res.status(500).json({
+      error: 'Failed to fetch products',
+      details: err.message,
     });
   }
 };
@@ -181,24 +106,15 @@ exports.getAllProducts = async (req, res) => {
 // Get product by ID
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate('category')
-      .populate('subcategories')
-      .populate({
-        path: 'reviews.user',
-        select: 'name email'
-      });
-    
+    const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
     res.status(200).json(product);
   } catch (err) {
-    console.error('Error fetching product:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch product', 
-      details: err.message 
+    res.status(500).json({
+      error: 'Failed to fetch product',
+      details: err.message,
     });
   }
 };
@@ -206,209 +122,15 @@ exports.getProductById = async (req, res) => {
 // Get product by slug
 exports.getProductBySlug = async (req, res) => {
   try {
-    const product = await Product.findOne({ slug: req.params.slug })
-      .populate('category')
-      .populate('subcategories')
-      .populate({
-        path: 'reviews.user',
-        select: 'name email'
-      });
-    
+    const product = await Product.findOne({ slug: req.params.slug });
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
     res.status(200).json(product);
   } catch (err) {
-    console.error('Error fetching product by slug:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch product', 
-      details: err.message 
-    });
-  }
-};
-
-// Update product
-exports.updateProduct = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    
-    // Process uploaded images if any
-    let uploadedFiles = [];
-    
-    if (req.files && req.files.length > 0) {
-      uploadedFiles = req.files.map(file => `/uploads/products/${file.filename}`);
-      
-      // Add new images to existing ones
-      product.images = [...product.images, ...uploadedFiles];
-      
-      // If no featured image set or explicitly requested, set first new image as featured
-      if (!product.featuredImage || req.body.setFeaturedFromNew === 'true') {
-        product.featuredImage = uploadedFiles[0];
-      }
-    }
-    
-    // Update slug if name is changing
-    if (req.body.name && req.body.name !== product.name) {
-      req.body.slug = slugify(req.body.name, { lower: true });
-    }
-    
-    // Handle arrays that might come as strings
-    if (req.body.colors && typeof req.body.colors === 'string') {
-      req.body.colors = req.body.colors.split(',').map(color => color.trim());
-    }
-    
-    if (req.body.sizes && typeof req.body.sizes === 'string') {
-      req.body.sizes = req.body.sizes.split(',').map(size => size.trim());
-    }
-    
-    if (req.body.tags && typeof req.body.tags === 'string') {
-      req.body.tags = req.body.tags.split(',').map(tag => tag.trim());
-    }
-    
-    // Convert string numbers to actual numbers
-    if (req.body.price) req.body.price = Number(req.body.price);
-    if (req.body.originalPrice) req.body.originalPrice = Number(req.body.originalPrice);
-    if (req.body.countInStock) req.body.countInStock = Number(req.body.countInStock);
-    if (req.body.discountPercentage) req.body.discountPercentage = Number(req.body.discountPercentage);
-    
-    // Convert boolean strings to actual booleans
-    if (req.body.isFeatured !== undefined) {
-      req.body.isFeatured = req.body.isFeatured === 'true';
-    }
-    
-    if (req.body.isOnSale !== undefined) {
-      req.body.isOnSale = req.body.isOnSale === 'true';
-    }
-    
-    // Update the product
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      { ...req.body, dateModified: Date.now() },
-      { new: true, runValidators: true }
-    ).populate('category');
-    
-    res.status(200).json(updatedProduct);
-  } catch (err) {
-    console.error('Error updating product:', err);
-    res.status(500).json({ 
-      error: 'Failed to update product', 
-      details: err.message 
-    });
-  }
-};
-
-// Delete product
-exports.deleteProduct = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    
-    // Delete associated images from file system
-    if (product.images && product.images.length > 0) {
-      product.images.forEach(image => {
-        const imagePath = path.join(__dirname, '../public', image);
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
-        }
-      });
-    }
-    
-    await Product.findByIdAndDelete(req.params.id);
-    
-    res.status(200).json({ message: 'Product deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting product:', err);
-    res.status(500).json({ 
-      error: 'Failed to delete product', 
-      details: err.message 
-    });
-  }
-};
-
-// Delete product image
-exports.deleteProductImage = async (req, res) => {
-  try {
-    const { id, imageIndex } = req.params;
-    const product = await Product.findById(id);
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    
-    if (!product.images || imageIndex >= product.images.length) {
-      return res.status(400).json({ error: 'Image not found' });
-    }
-    
-    // Get the image path
-    const imageToDelete = product.images[imageIndex];
-    
-    // Remove from array
-    product.images.splice(imageIndex, 1);
-    
-    // If deleted image was the featured image, set a new one if available
-    if (product.featuredImage === imageToDelete && product.images.length > 0) {
-      product.featuredImage = product.images[0];
-    } else if (product.images.length === 0) {
-      product.featuredImage = '';
-    }
-    
-    await product.save();
-    
-    // Delete the file from the file system
-    const imagePath = path.join(__dirname, '../public', imageToDelete);
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
-    }
-    
-    res.status(200).json({ 
-      message: 'Image deleted successfully',
-      product
-    });
-  } catch (err) {
-    console.error('Error deleting product image:', err);
-    res.status(500).json({ 
-      error: 'Failed to delete product image', 
-      details: err.message 
-    });
-  }
-};
-
-// Set featured image
-exports.setFeaturedImage = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { imageIndex } = req.body;
-    
-    const product = await Product.findById(id);
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    
-    if (!product.images || imageIndex >= product.images.length) {
-      return res.status(400).json({ error: 'Image not found' });
-    }
-    
-    product.featuredImage = product.images[imageIndex];
-    await product.save();
-    
-    res.status(200).json({ 
-      message: 'Featured image updated',
-      product
-    });
-  } catch (err) {
-    console.error('Error setting featured image:', err);
-    res.status(500).json({ 
-      error: 'Failed to set featured image', 
-      details: err.message 
+    res.status(500).json({
+      error: 'Failed to fetch product',
+      details: err.message,
     });
   }
 };
@@ -416,164 +138,445 @@ exports.setFeaturedImage = async (req, res) => {
 // Get featured products
 exports.getFeaturedProducts = async (req, res) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 8;
-    
-    const products = await Product.find({ isFeatured: true, status: 'published' })
-      .limit(limit)
-      .populate('category');
-    
-    res.status(200).json(products);
+    const limit = parseInt(req.query.limit) || 8;
+    const featuredProducts = await Product.find({ isFeatured: true, status: 'active' }).limit(limit);
+    res.status(200).json(featuredProducts);
   } catch (err) {
-    console.error('Error fetching featured products:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch featured products', 
-      details: err.message 
+    res.status(500).json({
+      error: 'Failed to fetch featured products',
+      details: err.message,
     });
   }
 };
 
-// Get on sale products
-exports.getOnSaleProducts = async (req, res) => {
+// Get sale products
+exports.getSaleProducts = async (req, res) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 8;
-    
-    const products = await Product.find({ isOnSale: true, status: 'published' })
-      .limit(limit)
-      .populate('category');
-    
-    res.status(200).json(products);
+    const limit = parseInt(req.query.limit) || 8;
+    // Products with discountPercentage > 0 or onSale flag explicitly true
+    const saleProducts = await Product.find({ $or: [{ onSale: true }, { discountPercentage: { $gt: 0 } }], status: 'active' }).limit(limit);
+    res.status(200).json(saleProducts);
   } catch (err) {
-    console.error('Error fetching sale products:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch sale products', 
-      details: err.message 
+    res.status(500).json({
+      error: 'Failed to fetch sale products',
+      details: err.message,
     });
   }
 };
 
-// Get product count
-exports.getProductCount = async (req, res) => {
+// Create new product (Admin Only)
+exports.createProduct = async (req, res) => {
   try {
-    const productCount = await Product.countDocuments();
-    
-    res.status(200).json({ count: productCount });
-  } catch (err) {
-    console.error('Error counting products:', err);
-    res.status(500).json({ 
-      error: 'Failed to count products', 
-      details: err.message 
-    });
-  }
-};
+    const {
+      name,
+      description,
+      price,
+      category,
+      brand,
+      sku,
+      stockQuantity,
+      isFeatured,
+      discountPercentage,
+      status
+    } = req.body;
 
-// Add a product review
-exports.addProductReview = async (req, res) => {
-  try {
-    const { rating, comment } = req.body;
-    
-    if (!rating || !comment) {
-      return res.status(400).json({ error: 'Rating and comment are required' });
+    // Validate required fields
+    if (!name || !description || !price || !category || !stockQuantity) {
+      // Clean up uploaded files if validation fails
+      if (req.files && req.files.length > 0) {
+        req.files.forEach(file => {
+          fs.unlinkSync(file.path);
+        });
+      }
+      return res.status(400).json({ error: 'Name, description, price, category, and stock quantity are required.' });
     }
-    
-    const product = await Product.findById(req.params.id);
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
+
+    // Validate category exists
+    const existingCategory = await Category.findById(category);
+    if (!existingCategory) {
+      if (req.files && req.files.length > 0) {
+        req.files.forEach(file => {
+          fs.unlinkSync(file.path);
+        });
+      }
+      return res.status(400).json({ error: 'Invalid category ID.' });
     }
-    
-    // Check if user already reviewed this product
-    const alreadyReviewed = product.reviews.find(
-      review => review.user.toString() === req.user.id
-    );
-    
-    if (alreadyReviewed) {
-      return res.status(400).json({ error: 'Product already reviewed' });
+
+    // Prepare image URLs
+    const imageUrls = req.files ? req.files.map(file => ({
+      url: `/uploads/products/${file.filename}`,
+      isFeatured: false, // Default to false, can be set later
+    })) : [];
+
+    // Set first image as featured by default if no other is specified
+    if (imageUrls.length > 0) {
+      imageUrls[0].isFeatured = true;
     }
-    
-    // Create new review
-    const review = {
-      user: req.user.id,
-      name: req.user.name,
-      rating: Number(rating),
-      comment
+
+    const productData = {
+      name,
+      description,
+      price: parseFloat(price),
+      category,
+      brand,
+      sku,
+      stockQuantity: parseInt(stockQuantity),
+      isFeatured: Boolean(isFeatured),
+      discountPercentage: discountPercentage ? parseFloat(discountPercentage) : 0,
+      status: status || 'draft',
+      images: imageUrls,
+      thumbnail: imageUrls.length > 0 ? imageUrls[0].url : undefined, // Set thumbnail
     };
-    
-    // Add to reviews array
-    product.reviews.push(review);
-    
-    // Update product rating statistics
-    await product.updateRatingStats();
-    
-    res.status(201).json({ 
-      message: 'Review added',
-      product
-    });
+
+    const product = new Product(productData);
+    await product.save();
+    res.status(201).json(product);
   } catch (err) {
-    console.error('Error adding review:', err);
-    res.status(500).json({ 
-      error: 'Failed to add review', 
-      details: err.message 
+    // Clean up uploaded files if an error occurs during save
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        fs.unlinkSync(file.path);
+      });
+    }
+    console.error('Error creating product:', err); // Log the error for debugging
+    if (err.code === 11000 && err.keyPattern.slug) {
+      return res.status(400).json({ error: 'Product name already exists, please choose a different name.' });
+    }
+    if (err.code === 11000 && err.keyPattern.sku) {
+      return res.status(400).json({ error: 'SKU already exists, please use a unique SKU.' });
+    }
+    res.status(500).json({
+      error: 'Failed to create product',
+      details: err.message,
     });
   }
 };
 
-// Update product inventory
-exports.updateInventory = async (req, res) => {
+
+// Update product (Admin Only)
+exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity } = req.body;
-    
-    if (quantity === undefined) {
-      return res.status(400).json({ error: 'Quantity is required' });
-    }
-    
+    const {
+      name,
+      description,
+      price,
+      category,
+      brand,
+      sku,
+      stockQuantity,
+      isFeatured,
+      discountPercentage,
+      status,
+      existingImageUrls // Array of existing image URLs from frontend
+    } = req.body;
+
     const product = await Product.findById(id);
-    
     if (!product) {
+      // Clean up newly uploaded files if product not found
+      if (req.files && req.files.length > 0) {
+        req.files.forEach(file => fs.unlinkSync(file.path));
+      }
       return res.status(404).json({ error: 'Product not found' });
     }
-    
-    // Update inventory
-    product.countInStock = Math.max(0, parseInt(quantity));
-    await product.save();
-    
-    res.status(200).json({
-      message: 'Inventory updated',
-      product
+
+    // Collect current image paths on the filesystem for later cleanup if they are removed
+    const oldImagePathsOnDisk = product.images.map(img => path.join(__dirname, '../public', img.url));
+
+    // Prepare updated image URLs
+    let updatedImageUrls = [];
+    if (existingImageUrls && Array.isArray(existingImageUrls)) {
+      // Filter out images that are no longer in existingImageUrls (i.e., deleted by user)
+      updatedImageUrls = product.images.filter(img =>
+        existingImageUrls.includes(img.url)
+      );
+    }
+
+    // Add newly uploaded images
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        updatedImageUrls.push({
+          url: `/uploads/products/${file.filename}`,
+          isFeatured: false, // Newly uploaded images are not featured by default
+        });
+      });
+    }
+
+    // Determine images to delete from disk (those in oldImagePathsOnDisk but not in updatedImageUrls)
+    const imagesToDeleteFromDisk = oldImagePathsOnDisk.filter(oldPath => {
+      const oldUrl = oldPath.replace(path.join(__dirname, '../public'), '').replace(/\\/g, '/'); // Normalize path for comparison
+      return !updatedImageUrls.some(newImg => newImg.url === oldUrl);
     });
+
+    // Delete old images from disk
+    imagesToDeleteFromDisk.forEach(imgPath => {
+      if (fs.existsSync(imgPath)) {
+        fs.unlinkSync(imgPath);
+      }
+    });
+
+    // Update product fields
+    if (name !== undefined) product.name = name;
+    if (description !== undefined) product.description = description;
+    if (price !== undefined) product.price = parseFloat(price);
+    if (category !== undefined) {
+      const existingCategory = await Category.findById(category);
+      if (!existingCategory) {
+        // Clean up newly uploaded files if category is invalid
+        if (req.files && req.files.length > 0) {
+          req.files.forEach(file => fs.unlinkSync(file.path));
+        }
+        return res.status(400).json({ error: 'Invalid category ID.' });
+      }
+      product.category = category;
+    }
+    if (brand !== undefined) product.brand = brand;
+    if (sku !== undefined) product.sku = sku;
+    if (stockQuantity !== undefined) product.stockQuantity = parseInt(stockQuantity);
+    if (isFeatured !== undefined) product.isFeatured = Boolean(isFeatured);
+    if (discountPercentage !== undefined) product.discountPercentage = parseFloat(discountPercentage);
+    if (status !== undefined) product.status = status;
+
+    product.images = updatedImageUrls;
+    product.thumbnail = updatedImageUrls.length > 0 ? updatedImageUrls[0].url : '/placehold.co/400x400/CCCCCC/000000?text=No+Image'; // Update thumbnail
+
+    // Re-save to trigger pre-save hooks (for slug, salePrice, onSale)
+    await product.save();
+    res.status(200).json(product);
   } catch (err) {
-    console.error('Error updating inventory:', err);
-    res.status(500).json({ 
-      error: 'Failed to update inventory', 
-      details: err.message 
+    // Clean up newly uploaded files if an error occurs during save
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => fs.unlinkSync(file.path));
+    };
+    console.error('Error updating product:', err); // Log the error for debugging
+    if (err.code === 11000 && err.keyPattern.slug) {
+      return res.status(400).json({ error: 'Product name already exists, please choose a different name.' });
+    }
+    if (err.code === 11000 && err.keyPattern.sku) {
+      return res.status(400).json({ error: 'SKU already exists, please use a unique SKU.' });
+    }
+    res.status(500).json({
+      error: 'Failed to update product',
+      details: err.message,
     });
   }
 };
 
-// Bulk update product statuses
+
+// Delete product (Admin Only)
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Delete associated images from the filesystem
+    if (product.images && product.images.length > 0) {
+      product.images.forEach(img => {
+        const imagePath = path.join(__dirname, '../public', img.url);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      });
+    }
+
+    await Product.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Product deleted successfully' });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Failed to delete product',
+      details: err.message,
+    });
+  }
+};
+
+// Delete a specific product image (Admin Only)
+exports.deleteProductImage = async (req, res) => {
+  try {
+    const { id, imageIndex } = req.params; // id is product ID
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    if (imageIndex < 0 || imageIndex >= product.images.length) {
+      return res.status(400).json({ error: 'Invalid image index' });
+    }
+
+    const imageToDelete = product.images[imageIndex];
+    const imagePath = path.join(__dirname, '../public', imageToDelete.url);
+
+    // Remove from array
+    product.images.splice(imageIndex, 1);
+
+    // If the deleted image was the thumbnail, set a new one
+    if (imageToDelete.url === product.thumbnail) {
+      product.thumbnail = product.images.length > 0 ? product.images[0].url : '/placehold.co/400x400/CCCCCC/000000?text=No+Image';
+    }
+
+    // If there are no images left, revert thumbnail to default placeholder
+    if (product.images.length === 0) {
+      product.thumbnail = '/placehold.co/400x400/CCCCCC/000000?text=No+Image';
+    }
+
+    await product.save();
+
+    // Delete image from filesystem
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+
+    res.status(200).json({ message: 'Image deleted successfully', product });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Failed to delete image',
+      details: err.message,
+    });
+  }
+};
+
+// Set featured image (Admin Only)
+exports.setFeaturedImage = async (req, res) => {
+  try {
+    const { id } = req.params; // Product ID
+    const { imageIndex } = req.body;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    if (imageIndex === undefined || imageIndex < 0 || imageIndex >= product.images.length) {
+      return res.status(400).json({ error: 'Invalid image index provided.' });
+    }
+
+    // Reset all images to not featured
+    product.images.forEach(img => (img.isFeatured = false));
+
+    // Set the selected image as featured
+    product.images[imageIndex].isFeatured = true;
+
+    // Also update the main thumbnail for consistency
+    product.thumbnail = product.images[imageIndex].url;
+
+    await product.save();
+    res.status(200).json({ message: 'Featured image updated successfully', product });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Failed to set featured image',
+      details: err.message,
+    });
+  }
+};
+
+// Update product inventory (Admin Only)
+exports.updateInventory = async (req, res) => {
+  try {
+    const { id } = req.params; // Product ID
+    const { quantity } = req.body;
+
+    if (quantity === undefined || isNaN(quantity) || quantity < 0) {
+      return res.status(400).json({ error: 'Valid positive quantity is required.' });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    product.stockQuantity = parseInt(quantity);
+    await product.save();
+
+    res.status(200).json({ message: 'Inventory updated successfully', product });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Failed to update inventory',
+      details: err.message,
+    });
+  }
+};
+
+// Bulk update product status (Admin Only)
 exports.bulkUpdateStatus = async (req, res) => {
   try {
     const { productIds, status } = req.body;
-    
-    if (!productIds || !Array.isArray(productIds) || !status) {
-      return res.status(400).json({ error: 'Product IDs array and status are required' });
+
+    if (!Array.isArray(productIds) || productIds.length === 0 || !status) {
+      return res.status(400).json({ error: 'Product IDs and status are required.' });
     }
-    
-    if (!['draft', 'published', 'archived'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+    if (!['active', 'inactive', 'draft'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status provided. Must be active, inactive, or draft.' });
     }
-    
-    await Product.updateMany(
+
+    const result = await Product.updateMany(
       { _id: { $in: productIds } },
-      { status, dateModified: Date.now() }
+      { $set: { status: status } }
     );
-    
-    res.status(200).json({ message: `${productIds.length} products updated to ${status}` });
+
+    res.status(200).json({
+      message: `${result.modifiedCount} products updated successfully to status: ${status}`,
+      updatedCount: result.modifiedCount,
+    });
   } catch (err) {
-    console.error('Error bulk updating products:', err);
-    res.status(500).json({ 
-      error: 'Failed to update products', 
-      details: err.message 
+    res.status(500).json({
+      error: 'Failed to bulk update product status',
+      details: err.message,
+    });
+  }
+};
+
+// Add product review
+exports.addProductReview = async (req, res) => {
+  try {
+    const { id } = req.params; // Product ID
+    const { rating, comment } = req.body;
+    const { _id: userId, name: userName } = req.user; // From auth middleware
+
+    if (!rating || !comment) {
+      return res.status(400).json({ error: 'Rating and comment are required.' });
+    }
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5.' });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    // Check if user has already reviewed this product
+    const alreadyReviewed = product.reviews.find(
+      (r) => r.user.toString() === userId.toString()
+    );
+
+    if (alreadyReviewed) {
+      // Optionally allow updating review, or return error
+      alreadyReviewed.rating = rating;
+      alreadyReviewed.comment = comment;
+      alreadyReviewed.timestamps = { updatedAt: new Date() }; // Manually update timestamp
+      res.status(200).json({ message: 'Review updated successfully', product });
+    } else {
+      const review = {
+        user: userId,
+        name: userName,
+        rating: Number(rating),
+        comment,
+      };
+      product.reviews.push(review);
+      res.status(201).json({ message: 'Review added successfully', product });
+    }
+
+    // Update average rating and number of reviews
+    product.updateAverageRating();
+    await product.save();
+
+  } catch (err) {
+    res.status(500).json({
+      error: 'Failed to add review',
+      details: err.message,
     });
   }
 };

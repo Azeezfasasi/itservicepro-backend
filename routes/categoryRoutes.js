@@ -1,37 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const { 
-     getAllCategories,
-     getCategoryTree, 
-     getCategoryById, 
-     getCategoryBySlug, 
-     createCategory, 
-     updateCategory, 
-     deleteCategory } = require('../controllers/categoryController');
-const { auth, authorizeRoles } = require('../middleware/auth');
+const categoryController = require('../controllers/categoryController');
+const { auth, authorizeRoles } = require('../middleware/auth'); // Your authentication middleware
 
 // Public routes
-// GET /api/categories
-router.get('/', getAllCategories);
+router.get('/', categoryController.getAllCategories);
+router.get('/tree', categoryController.getCategoryTree); // Get categories in a hierarchical tree structure
+router.get('/:id', categoryController.getCategoryById);
+router.get('/slug/:slug', categoryController.getCategoryBySlug);
 
-// GET /api/categories/tree
-router.get('/tree', getCategoryTree);
-
-// GET /api/categories/:id
-router.get('/:id', getCategoryById);
-
-// GET /api/categories/slug/:slug
-router.get('/slug/:slug', getCategoryBySlug);
-
-// Admin only routes - require authentication and authorization
-
-// POST /api/categories
-router.post('/', auth, authorizeRoles, createCategory);
-
-// PUT /api/categories/:id
-router.put('/:id', auth, authorizeRoles, updateCategory);
-
-// DELETE /api/categories/:id
-router.delete('/:id', auth, authorizeRoles, deleteCategory);
+// Admin-only routes
+router.post(
+  '/',
+  auth,
+  authorizeRoles,
+  categoryController.uploadCategoryImage, // Multer middleware for single image upload
+  categoryController.createCategory
+);
+router.put(
+  '/:id',
+  auth,
+  authorizeRoles,
+  categoryController.uploadCategoryImage, // Multer middleware for single image upload
+  categoryController.updateCategory
+);
+router.delete('/:id', auth, authorizeRoles, categoryController.deleteCategory);
 
 module.exports = router;
