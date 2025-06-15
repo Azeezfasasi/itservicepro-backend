@@ -30,7 +30,7 @@ const fileFilter = (req, file, cb) => {
 exports.uploadCategoryImage = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 1024 * 1024 * 5 } // 5MB limit
+  limits: { fileSize: 1024 * 1024 * 2 } // 2MB limit
 }).single('image');
 
 // Get all categories
@@ -92,9 +92,9 @@ exports.createCategory = async (req, res) => {
     const { name, description, parent, level, isActive, sortOrder } = req.body;
     
     // Validate required fields
-    // if (!name) {
-    //   return res.status(400).json({ error: 'Category name is required' });
-    // }
+    if (!name) {
+      return res.status(400).json({ error: 'Category name is required' });
+    }
     
     // Set image path if uploaded
     let imagePath = '';
