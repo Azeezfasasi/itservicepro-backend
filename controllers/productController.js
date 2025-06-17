@@ -42,7 +42,7 @@ exports.uploadProductImages = multer({
   limits: { fileSize: 1024 * 1024 * 10 }
 }).array('images', 10); 
 
-const uploadProductImages = async (req, res, next) => {
+exports.uploadProductImages = async (req, res, next) => {
   try {
     if (!req.files || !req.files.images) {
       return next(new Error('No images provided'));
