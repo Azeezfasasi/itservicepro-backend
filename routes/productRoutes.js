@@ -18,9 +18,12 @@ router.post(
   '/',
   auth,
   authorizeRoles,
-  productController.uploadProductImages, // Multer middleware for multi-image upload
+  // productController.uploadProductImages,
+  uploadMiddleware, 
+  processUploadedImages,
   productController.createProduct
 );
+
 router.put(
   '/:id',
   auth,

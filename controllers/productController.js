@@ -35,23 +35,33 @@ const productFileFilter = (req, file, cb) => {
   }
 };
 
+const memoryStorage = multer.memoryStorage();
+
 // Middleware for handling multiple product image uploads
-exports.uploadProductImages = multer({
-  storage: productStorage,
+// exports.uploadMiddleware = multer({
+//   storage: productStorage,
+//   fileFilter: productFileFilter,
+//   limits: { fileSize: 1024 * 1024 * 10 }
+// }).array('images', 10); 
+
+exports.uploadMiddlewareMemory = multer({
+  storage: memoryStorage, // Use memoryStorage
   fileFilter: productFileFilter,
   limits: { fileSize: 1024 * 1024 * 10 }
-}).array('images', 10); 
+}).array('images', 10);
 
-exports.uploadProductImages = async (req, res, next) => {
+// Define the async image processing middleware separately
+exports.processUploadedImages = async (req, res, next) => {
   try {
-    if (!req.files || !req.files.images) {
-      return next(new Error('No images provided'));
+    // If no files uploaded, move on
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      req.body.images = [];
+      return next();
     }
 
-    const images = req.files.images;
     const uploadedImages = [];
 
-    for (const image of images) {
+    for (const image of req.files) {
       const uploadedImage = await uploadImage(image.buffer, image.originalname);
       uploadedImages.push(uploadedImage.secure_url);
     }
@@ -59,6 +69,7 @@ exports.uploadProductImages = async (req, res, next) => {
     req.body.images = uploadedImages;
     next();
   } catch (error) {
+    console.error('Error processing uploaded images:', error);
     next(error);
   }
 };
