@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const slugify = require('slugify');
+const cloudinary = require('../utils/cloudinary');
 
 // --- Multer Setup for Product Images ---
 const productStorage = multer.diskStorage({
@@ -19,6 +20,13 @@ const productStorage = multer.diskStorage({
   }
 });
 
+const uploadImage = (imageBuffer, imageName) => {
+  return cloudinary.uploader.upload(imageBuffer, {
+    public_id: imageName,
+    folder: 'products'
+  });
+};
+
 const productFileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
@@ -31,11 +39,25 @@ const productFileFilter = (req, file, cb) => {
 exports.uploadProductImages = multer({
   storage: productStorage,
   fileFilter: productFileFilter,
-  limits: { fileSize: 1024 * 1024 * 10 } // 10MB limit per image
-}).array('images', 5); // Allow up to 5 images per product
+  limits: { fileSize: 1024 * 1024 * 10 }
+}).array('images', 10); 
 
+exports.uploadProductImages = async (req, res, next) => {
+  try {
+    const images = req.files;
+    const uploadedImages = [];
 
-// --- Product Controller Functions ---
+    for (const image of images) {
+      const uploadedImage = await uploadImage(image.buffer, image.originalname);
+      uploadedImages.push(uploadedImage.secure_url);
+    }
+
+    req.body.images = uploadedImages;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
 // Get all products
 exports.getAllProducts = async (req, res) => {

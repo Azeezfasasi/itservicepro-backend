@@ -139,7 +139,6 @@ const productSchema = new mongoose.Schema({
   colors: [String], // Array of strings for colors
   sizes: [String],  // Array of strings for sizes (e.g., S, M, L or 7, 8, 9)
   tags: [String],   // Array of strings for tags
-  // --- END NEW FIELDS ---
 }, {
   timestamps: true,
 });
