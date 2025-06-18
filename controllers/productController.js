@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const slugify = require('slugify');
-const cloudinary = require('../utils/cloudinary');
+// const cloudinary = require('../utils/cloudinary');
+const cloudinary = require('cloudinary').v2;
 
 // Helper function to extract public_id from Cloudinary URL
 const getPublicIdFromCloudinaryUrl = (url) => {
