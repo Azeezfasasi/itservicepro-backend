@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const User = require('../models/User');
 
-const auth = (req, res, next) => {
+const auth = async (req, res, next) => {
   console.log('Auth called');
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -10,9 +11,23 @@ const auth = (req, res, next) => {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    req.user = decoded;
+    req.user = await User.findById(decoded.id || decoded._id).select('-password'); 
+
+    if (!req.user) {
+      console.error('Auth middleware: User not found for decoded ID:', decoded.id || decoded._id);
+      return res.status(401).json({ error: 'Not authorized, user not found.' });
+    }
+    console.log(`Auth middleware: User ID ${req.user._id} attached to req.user.`);
+    // req.user = decoded;
     next();
   } catch (err) {
+    console.error('Auth middleware token error:', err.message);
+    if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: 'Not authorized, token expired.' });
+    }
+    if (err.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: 'Not authorized, invalid token.' });
+    }
     res.status(401).json({ error: 'Invalid or expired token.' });
   }
 };
