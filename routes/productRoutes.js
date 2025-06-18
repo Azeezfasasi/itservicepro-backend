@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
-const { auth, authorizeRoles } = require('../middleware/auth'); // Your authentication middleware
-
-// Public routes
+const { auth, authorizeRoles } = require('../middleware/auth'); 
+  
+  // Public routes
 router.get('/', productController.getAllProducts);
 router.get('/featured', productController.getFeaturedProducts);
 router.get('/sale', productController.getSaleProducts);
@@ -18,20 +18,21 @@ router.post(
   '/',
   auth,
   authorizeRoles,
-  // productController.uploadProductImages,
-  uploadMiddleware, 
-  processUploadedImages,
-  productController.createProduct
+  productController.uploadMiddlewareMemory, 
+  productController.processUploadedImages,    
+  productController.createProduct               
 );
 
 router.put(
   '/:id',
   auth,
   authorizeRoles,
-  productController.uploadProductImages, // Multer middleware for multi-image upload
-  productController.updateProduct
+  productController.uploadMiddlewareMemory,       
+  productController.processUploadedImages,        
+  productController.updateProduct                
 );
-router.delete('/:id', auth, authorizeRoles, productController.deleteProduct);
+
+  router.delete('/:id', auth, authorizeRoles, productController.deleteProduct);
 router.delete('/:id/images/:imageIndex', auth, authorizeRoles, productController.deleteProductImage);
 router.put('/:id/featured-image', auth, authorizeRoles, productController.setFeaturedImage);
 router.put('/:id/inventory', auth, authorizeRoles, productController.updateInventory);
