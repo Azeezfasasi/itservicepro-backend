@@ -303,125 +303,6 @@ exports.createProduct = async (req, res) => {
 
 
 // Update product (Admin Only)
-// exports.updateProduct = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const {
-//       name,
-//       description,
-//       richDescription,
-//       price,
-//       originalPrice,
-//       category,
-//       brand,
-//       sku,
-//       stockQuantity,
-//       isFeatured,
-//       discountPercentage,
-//       status,
-//       weight,
-//       dimensions,
-//       colors,
-//       sizes,
-//       tags,
-//       existingImageUrls,
-//       newUploadedImageUrls
-//     } = req.body;
-
-//     const product = await Product.findById(id);
-//     if (!product) {
-//       return res.status(404).json({ error: 'Product not found' });
-//     }
-
-//     let finalImageUrls = [];
-
-//     if (existingImageUrls && Array.isArray(existingImageUrls)) {
-//         finalImageUrls = product.images.filter(img =>
-//             existingImageUrls.some(existingUrl => existingUrl === img.url)
-//         );
-//     }
-
-//     if (newUploadedImageUrls && Array.isArray(newUploadedImageUrls)) {
-//       finalImageUrls = finalImageUrls.concat(newUploadedImageUrls);
-//     }
-
-//     const imagesToDeleteFromCloudinary = product.images.filter(img =>
-//         !finalImageUrls.some(finalImg => finalImg.url === img.url)
-//     );
-
-//     for (const img of imagesToDeleteFromCloudinary) {
-//       const publicId = getPublicIdFromCloudinaryUrl(img.url);
-//       if (publicId) {
-//         try {
-//           await cloudinary.uploader.destroy(publicId);
-//           console.log(`Deleted Cloudinary image: ${publicId}`);
-//         } catch (cloudinaryErr) {
-//           console.error(`Failed to delete Cloudinary image ${publicId}:`, cloudinaryErr);
-//         }
-//       }
-//     }
-
-//     if (name !== undefined) product.name = name;
-//     if (description !== undefined) product.description = description;
-//     if (richDescription !== undefined) product.richDescription = richDescription;
-//     if (price !== undefined) product.price = parseFloat(price);
-//     if (originalPrice !== undefined) product.originalPrice = originalPrice ? parseFloat(originalPrice) : null;
-//     if (category !== undefined) {
-//       const existingCategory = await Category.findById(category);
-//       if (!existingCategory) {
-//         return res.status(400).json({ error: 'Invalid category ID.' });
-//       }
-//       product.category = category;
-//     }
-//     if (brand !== undefined) product.brand = brand;
-//     if (sku !== undefined) {
-//         if (sku !== product.sku) {
-//             const existingProductWithSku = await Product.findOne({ sku: sku });
-//             if (existingProductWithSku) {
-//                 return res.status(400).json({ error: 'SKU already exists, please use a unique SKU.' });
-//             }
-//         }
-//         product.sku = sku;
-//     }
-//     if (stockQuantity !== undefined) product.stockQuantity = parseInt(stockQuantity);
-//     if (isFeatured !== undefined) product.isFeatured = Boolean(isFeatured);
-//     if (discountPercentage !== undefined) product.discountPercentage = parseFloat(discountPercentage);
-//     if (status !== undefined) product.status = status;
-//     if (weight !== undefined) product.weight = weight ? parseFloat(weight) : null;
-//     if (dimensions !== undefined) product.dimensions = {
-//         length: dimensions.length ? parseFloat(dimensions.length) : null,
-//         width: dimensions.width ? parseFloat(dimensions.width) : null,
-//         height: dimensions.height ? parseFloat(dimensions.height) : null,
-//     };
-//     if (colors !== undefined) product.colors = Array.isArray(colors) ? colors : (typeof colors === 'string' ? colors.split(',').map(s => s.trim()).filter(s => s !== '') : []);
-//     if (sizes !== undefined) product.sizes = Array.isArray(sizes) ? sizes : (typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()).filter(s => s !== '') : []);
-//     if (tags !== undefined) product.tags = Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(s => s.trim()).filter(s => s !== '') : []);
-
-//     product.images = finalImageUrls;
-//     product.thumbnail = (finalImageUrls && finalImageUrls.length > 0) ? finalImageUrls[0].url : '/placehold.co/400x400/CCCCCC/000000?text=No+Image';
-
-//     await product.save();
-//     res.status(200).json(product);
-//   } catch (err) {
-//     console.error('Error updating product:', err);
-//     if (err.name === 'ValidationError') {
-//       const messages = Object.values(err.errors).map(val => val.message);
-//       return res.status(400).json({ error: messages.join(', ') });
-//     }
-//     if (err.code === 11000) {
-//         if (err.keyPattern && err.keyPattern.slug) {
-//             return res.status(400).json({ error: 'Product name already exists, please choose a different name.' });
-//         }
-//         if (err.keyPattern && err.keyPattern.sku) {
-//             return res.status(400).json({ error: 'SKU already exists, please use a unique SKU.' });
-//         }
-//     }
-//     res.status(500).json({
-//       error: 'Failed to update product',
-//       details: err.message,
-//     });
-//   }
-// };
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -440,11 +321,11 @@ exports.updateProduct = async (req, res) => {
       status,
       weight,
       dimensions,
-      colors, // Will be string via FormData
-      sizes,  // Will be string via FormData
-      tags,   // Will be string via FormData
-      existingImageUrls, // This is the crucial one - will be stringified JSON from FormData
-      newUploadedImageUrls // From processUploadedImages middleware
+      colors,
+      sizes,
+      tags,
+      existingImageUrls,
+      newUploadedImageUrls
     } = req.body;
 
     const product = await Product.findById(id);
@@ -452,44 +333,34 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // FIX: Parse existingImageUrls from string to array
-    let parsedExistingImageUrls = [];
-    if (existingImageUrls && typeof existingImageUrls === 'string') {
-        try {
-            parsedExistingImageUrls = JSON.parse(existingImageUrls);
-        } catch (e) {
-            console.error("Error parsing existingImageUrls:", e);
-            // If parsing fails, treat as an empty array to avoid errors, or handle as appropriate
-            parsedExistingImageUrls = [];
-        }
-    } else if (Array.isArray(existingImageUrls)) {
-        // This case would typically not happen if sent via FormData with JSON.stringify
-        // but included for robustness if data comes from other sources.
-        parsedExistingImageUrls = existingImageUrls;
-    }
-
-
-    // Re-parse array-like fields from comma-separated strings if sent via FormData
-    const parsedColors = typeof colors === 'string' ? colors.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(colors) ? colors : []);
-    const parsedSizes = typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(sizes) ? sizes : []);
-    const parsedTags = typeof tags === 'string' ? tags.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(tags) ? tags : []);
-
-
-    // Collect all image URLs that should remain/be added
     let finalImageUrls = [];
 
-    // 1. Add existing images that the frontend sent back (after parsing)
-    // Filter product's current images by their URLs if they are in parsedExistingImageUrls
-    finalImageUrls = product.images.filter(img =>
-      parsedExistingImageUrls.includes(img.url)
-    );
+    if (existingImageUrls && Array.isArray(existingImageUrls)) {
+        finalImageUrls = product.images.filter(img =>
+            existingImageUrls.some(existingUrl => existingUrl === img.url)
+        );
+    }
 
-    // 2. Add newly uploaded images from Cloudinary processing
     if (newUploadedImageUrls && Array.isArray(newUploadedImageUrls)) {
       finalImageUrls = finalImageUrls.concat(newUploadedImageUrls);
     }
 
-    // Update product fields
+    const imagesToDeleteFromCloudinary = product.images.filter(img =>
+        !finalImageUrls.some(finalImg => finalImg.url === img.url)
+    );
+
+    for (const img of imagesToDeleteFromCloudinary) {
+      const publicId = getPublicIdFromCloudinaryUrl(img.url);
+      if (publicId) {
+        try {
+          await cloudinary.uploader.destroy(publicId);
+          console.log(`Deleted Cloudinary image: ${publicId}`);
+        } catch (cloudinaryErr) {
+          console.error(`Failed to delete Cloudinary image ${publicId}:`, cloudinaryErr);
+        }
+      }
+    }
+
     if (name !== undefined) product.name = name;
     if (description !== undefined) product.description = description;
     if (richDescription !== undefined) product.richDescription = richDescription;
@@ -513,32 +384,20 @@ exports.updateProduct = async (req, res) => {
         product.sku = sku;
     }
     if (stockQuantity !== undefined) product.stockQuantity = parseInt(stockQuantity);
-    if (isFeatured !== undefined) product.isFeatured = (isFeatured === 'true' || isFeatured === true); // Handle boolean from FormData string
+    if (isFeatured !== undefined) product.isFeatured = Boolean(isFeatured);
     if (discountPercentage !== undefined) product.discountPercentage = parseFloat(discountPercentage);
     if (status !== undefined) product.status = status;
     if (weight !== undefined) product.weight = weight ? parseFloat(weight) : null;
+    if (dimensions !== undefined) product.dimensions = {
+        length: dimensions.length ? parseFloat(dimensions.length) : null,
+        width: dimensions.width ? parseFloat(dimensions.width) : null,
+        height: dimensions.height ? parseFloat(dimensions.height) : null,
+    };
+    if (colors !== undefined) product.colors = Array.isArray(colors) ? colors : (typeof colors === 'string' ? colors.split(',').map(s => s.trim()).filter(s => s !== '') : []);
+    if (sizes !== undefined) product.sizes = Array.isArray(sizes) ? sizes : (typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()).filter(s => s !== '') : []);
+    if (tags !== undefined) product.tags = Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(s => s.trim()).filter(s => s !== '') : []);
 
-    // Handle dimensions - ensuring it's an object, and fields are parsed to float
-    if (dimensions) {
-        product.dimensions = {
-            length: dimensions.length ? parseFloat(dimensions.length) : null,
-            width: dimensions.width ? parseFloat(dimensions.width) : null,
-            height: dimensions.height ? parseFloat(dimensions.height) : null,
-        };
-    } else {
-        if (product.dimensions) { 
-            product.dimensions = {
-                length: dimensions?.length ? parseFloat(dimensions.length) : product.dimensions.length,
-                width: dimensions?.width ? parseFloat(dimensions.width) : product.dimensions.width,
-                height: dimensions?.height ? parseFloat(dimensions.height) : product.dimensions.height,
-            };
-        }
-    }
-    product.colors = parsedColors;
-    product.sizes = parsedSizes;
-    product.tags = parsedTags;
-
-    product.images = finalImageUrls; // Assign the consolidated image array
+    product.images = finalImageUrls;
     product.thumbnail = (finalImageUrls && finalImageUrls.length > 0) ? finalImageUrls[0].url : '/placehold.co/400x400/CCCCCC/000000?text=No+Image';
 
     await product.save();
@@ -563,6 +422,147 @@ exports.updateProduct = async (req, res) => {
     });
   }
 };
+// exports.updateProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const {
+//       name,
+//       description,
+//       richDescription,
+//       price,
+//       originalPrice,
+//       category,
+//       brand,
+//       sku,
+//       stockQuantity,
+//       isFeatured,
+//       discountPercentage,
+//       status,
+//       weight,
+//       dimensions,
+//       colors, // Will be string via FormData
+//       sizes,  // Will be string via FormData
+//       tags,   // Will be string via FormData
+//       existingImageUrls, // This is the crucial one - will be stringified JSON from FormData
+//       newUploadedImageUrls // From processUploadedImages middleware
+//     } = req.body;
+
+//     const product = await Product.findById(id);
+//     if (!product) {
+//       return res.status(404).json({ error: 'Product not found' });
+//     }
+
+//     // FIX: Parse existingImageUrls from string to array
+//     let parsedExistingImageUrls = [];
+//     if (existingImageUrls && typeof existingImageUrls === 'string') {
+//         try {
+//             parsedExistingImageUrls = JSON.parse(existingImageUrls);
+//         } catch (e) {
+//             console.error("Error parsing existingImageUrls:", e);
+//             // If parsing fails, treat as an empty array to avoid errors, or handle as appropriate
+//             parsedExistingImageUrls = [];
+//         }
+//     } else if (Array.isArray(existingImageUrls)) {
+//         // This case would typically not happen if sent via FormData with JSON.stringify
+//         // but included for robustness if data comes from other sources.
+//         parsedExistingImageUrls = existingImageUrls;
+//     }
+
+
+//     // Re-parse array-like fields from comma-separated strings if sent via FormData
+//     const parsedColors = typeof colors === 'string' ? colors.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(colors) ? colors : []);
+//     const parsedSizes = typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(sizes) ? sizes : []);
+//     const parsedTags = typeof tags === 'string' ? tags.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(tags) ? tags : []);
+
+
+//     // Collect all image URLs that should remain/be added
+//     let finalImageUrls = [];
+
+//     // 1. Add existing images that the frontend sent back (after parsing)
+//     // Filter product's current images by their URLs if they are in parsedExistingImageUrls
+//     finalImageUrls = product.images.filter(img =>
+//       parsedExistingImageUrls.includes(img.url)
+//     );
+
+//     // 2. Add newly uploaded images from Cloudinary processing
+//     if (newUploadedImageUrls && Array.isArray(newUploadedImageUrls)) {
+//       finalImageUrls = finalImageUrls.concat(newUploadedImageUrls);
+//     }
+
+//     // Update product fields
+//     if (name !== undefined) product.name = name;
+//     if (description !== undefined) product.description = description;
+//     if (richDescription !== undefined) product.richDescription = richDescription;
+//     if (price !== undefined) product.price = parseFloat(price);
+//     if (originalPrice !== undefined) product.originalPrice = originalPrice ? parseFloat(originalPrice) : null;
+//     if (category !== undefined) {
+//       const existingCategory = await Category.findById(category);
+//       if (!existingCategory) {
+//         return res.status(400).json({ error: 'Invalid category ID.' });
+//       }
+//       product.category = category;
+//     }
+//     if (brand !== undefined) product.brand = brand;
+//     if (sku !== undefined) {
+//         if (sku !== product.sku) {
+//             const existingProductWithSku = await Product.findOne({ sku: sku });
+//             if (existingProductWithSku) {
+//                 return res.status(400).json({ error: 'SKU already exists, please use a unique SKU.' });
+//             }
+//         }
+//         product.sku = sku;
+//     }
+//     if (stockQuantity !== undefined) product.stockQuantity = parseInt(stockQuantity);
+//     if (isFeatured !== undefined) product.isFeatured = (isFeatured === 'true' || isFeatured === true); // Handle boolean from FormData string
+//     if (discountPercentage !== undefined) product.discountPercentage = parseFloat(discountPercentage);
+//     if (status !== undefined) product.status = status;
+//     if (weight !== undefined) product.weight = weight ? parseFloat(weight) : null;
+
+//     // Handle dimensions - ensuring it's an object, and fields are parsed to float
+//     if (dimensions) {
+//         product.dimensions = {
+//             length: dimensions.length ? parseFloat(dimensions.length) : null,
+//             width: dimensions.width ? parseFloat(dimensions.width) : null,
+//             height: dimensions.height ? parseFloat(dimensions.height) : null,
+//         };
+//     } else {
+//         if (product.dimensions) { 
+//             product.dimensions = {
+//                 length: dimensions?.length ? parseFloat(dimensions.length) : product.dimensions.length,
+//                 width: dimensions?.width ? parseFloat(dimensions.width) : product.dimensions.width,
+//                 height: dimensions?.height ? parseFloat(dimensions.height) : product.dimensions.height,
+//             };
+//         }
+//     }
+//     product.colors = parsedColors;
+//     product.sizes = parsedSizes;
+//     product.tags = parsedTags;
+
+//     product.images = finalImageUrls; // Assign the consolidated image array
+//     product.thumbnail = (finalImageUrls && finalImageUrls.length > 0) ? finalImageUrls[0].url : '/placehold.co/400x400/CCCCCC/000000?text=No+Image';
+
+//     await product.save();
+//     res.status(200).json(product);
+//   } catch (err) {
+//     console.error('Error updating product:', err);
+//     if (err.name === 'ValidationError') {
+//       const messages = Object.values(err.errors).map(val => val.message);
+//       return res.status(400).json({ error: messages.join(', ') });
+//     }
+//     if (err.code === 11000) {
+//         if (err.keyPattern && err.keyPattern.slug) {
+//             return res.status(400).json({ error: 'Product name already exists, please choose a different name.' });
+//         }
+//         if (err.keyPattern && err.keyPattern.sku) {
+//             return res.status(400).json({ error: 'SKU already exists, please use a unique SKU.' });
+//         }
+//     }
+//     res.status(500).json({
+//       error: 'Failed to update product',
+//       details: err.message,
+//     });
+//   }
+// };
 
 // Delete product (Admin Only)
 exports.deleteProduct = async (req, res) => {
