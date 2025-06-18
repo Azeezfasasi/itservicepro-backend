@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const slugify = require('slugify');
-// const cloudinary = require('../utils/cloudinary');
 const cloudinary = require('cloudinary').v2;
 
 // Helper function to extract public_id from Cloudinary URL
@@ -12,31 +11,37 @@ const getPublicIdFromCloudinaryUrl = (url) => {
   const parts = url.split('/');
   const uploadIndex = parts.indexOf('upload');
   if (uploadIndex === -1 || uploadIndex + 2 >= parts.length) {
-    return null; 
+    return null; // Invalid Cloudinary URL format
   }
-  const pathAfterUpload = parts.slice(uploadIndex + 1).join('/'); 
-  const publicIdWithVersion = pathAfterUpload.substring(pathAfterUpload.indexOf('/') + 1); 
-  const publicId = publicIdWithVersion.substring(0, publicIdWithVersion.lastIndexOf('.')); 
+  const publicIdWithVersion = parts.slice(uploadIndex + 1).join('/');
+  const productsFolderIndex = publicIdWithVersion.indexOf('products/');
+  let publicId = publicIdWithVersion;
+  if (productsFolderIndex !== -1) {
+    publicId = publicIdWithVersion.substring(productsFolderIndex);
+  }
+  const lastDotIndex = publicId.lastIndexOf('.');
+  if (lastDotIndex !== -1) {
+    publicId = publicId.substring(0, lastDotIndex);
+  }
   return publicId;
 };
-  
-  // --- Multer Setup for Product Images ---
-  const memoryStorage = multer.memoryStorage();
-  
-  const productFileFilter = (req, file, cb) => {
+
+// --- Multer Setup for Product Images (Memory Storage) ---
+const memoryStorage = multer.memoryStorage();
+
+const productFileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
     cb(new Error('Not an image! Please upload only images for products.'), false);
   }
 };
-  
-  // Middleware for handling multiple product image uploads
-  exports.uploadMiddlewareMemory = multer({
+
+exports.uploadMiddlewareMemory = multer({
   storage: memoryStorage,
   fileFilter: productFileFilter,
   limits: { fileSize: 1024 * 1024 * 10 } // 10MB limit per image
-}).array('images', 10); // Allow up to 10 images per product
+}).array('images', 10);
 
 // Define the async image processing middleware separately
 exports.processUploadedImages = async (req, res, next) => {
@@ -48,11 +53,19 @@ exports.processUploadedImages = async (req, res, next) => {
 
     const uploadedImages = [];
     for (const image of req.files) {
-      const uploadedImage = await cloudinary.uploader.upload(image.buffer, {
+      // Correctly form the Data URI from the Buffer
+      const dataUri = `data:${image.mimetype};base64,${image.buffer.toString('base64')}`;
+      // Use the original filename as the public_id for Cloudinary
+      const uploadOptions = {
         folder: 'products',
-      });
+        resource_type: 'auto', // Automatically determine file type
+      };
+
+      const uploadedImage = await cloudinary.uploader.upload(dataUri, uploadOptions);
+      
       uploadedImages.push({
         url: uploadedImage.secure_url,
+        public_id: uploadedImage.public_id, 
       });
     }
 
@@ -60,7 +73,7 @@ exports.processUploadedImages = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Error processing uploaded images to Cloudinary:', error);
-    next(error);
+    next(error); // Pass the error to the Express error handler
   }
 };
 
@@ -201,9 +214,9 @@ exports.createProduct = async (req, res) => {
     const {
       name,
       description,
-      richDescription, 
+      richDescription,
       price,
-      originalPrice, 
+      originalPrice,
       category,
       brand,
       sku,
@@ -211,11 +224,11 @@ exports.createProduct = async (req, res) => {
       isFeatured,
       discountPercentage,
       status,
-      weight,     
-      dimensions, 
-      colors,     
-      sizes,      
-      tags,       
+      weight,
+      dimensions,
+      colors,
+      sizes,
+      tags,
       newUploadedImageUrls // From processUploadedImages middleware
     } = req.body;
 
@@ -246,13 +259,13 @@ exports.createProduct = async (req, res) => {
       originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
       category,
       brand,
-      sku: sku || undefined, // Allow sku to be optional, handled by pre-save slug
+      sku: sku || undefined,
       stockQuantity: parseInt(stockQuantity),
       isFeatured: Boolean(isFeatured),
       discountPercentage: discountPercentage ? parseFloat(discountPercentage) : 0,
       status: status || 'draft',
-      images: newUploadedImageUrls || [], // Use Cloudinary URLs from middleware
-      thumbnail: (newUploadedImageUrls && newUploadedImageUrls.length > 0) ? newUploadedImageUrls[0].url : '/placehold.co/400x400/CCCCCC/000000?text=No+Image', // Set thumbnail from first uploaded image
+      images: newUploadedImageUrls || [],
+      thumbnail: (newUploadedImageUrls && newUploadedImageUrls.length > 0) ? newUploadedImageUrls[0].url : '/placehold.co/400x400/CCCCCC/000000?text=No+Image',
       weight: weight ? parseFloat(weight) : undefined,
       dimensions: dimensions ? {
         length: dimensions.length ? parseFloat(dimensions.length) : undefined,
@@ -265,16 +278,15 @@ exports.createProduct = async (req, res) => {
     };
 
     const product = new Product(productData);
-    await product.save(); // This will trigger the pre-save hook for slug, salePrice, onSale, and thumbnail if not set.
+    await product.save();
     res.status(201).json(product);
   } catch (err) {
     console.error('Error creating product:', err);
-    // Handle specific Mongoose errors
     if (err.name === 'ValidationError') {
       const messages = Object.values(err.errors).map(val => val.message);
       return res.status(400).json({ error: messages.join(', ') });
     }
-    if (err.code === 11000) { // Duplicate key error (e.g., if SKU was manually provided and duplicated)
+    if (err.code === 11000) {
         if (err.keyPattern && err.keyPattern.slug) {
             return res.status(400).json({ error: 'Product name already exists, please choose a different name.' });
         }
@@ -312,8 +324,8 @@ exports.updateProduct = async (req, res) => {
       colors,
       sizes,
       tags,
-      existingImageUrls, // Array of existing image URLs (from product.images.url)
-      newUploadedImageUrls // From processUploadedImages middleware
+      existingImageUrls,
+      newUploadedImageUrls
     } = req.body;
 
     const product = await Product.findById(id);
@@ -321,21 +333,18 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Collect all image URLs that should remain/be added
     let finalImageUrls = [];
 
-    // 1. Add existing images that the frontend sent back
     if (existingImageUrls && Array.isArray(existingImageUrls)) {
-      // Filter product's current images by their URLs if they are in existingImageUrls
-      finalImageUrls = product.images.filter(img => existingImageUrls.includes(img.url));
+        finalImageUrls = product.images.filter(img =>
+            existingImageUrls.some(existingUrl => existingUrl === img.url)
+        );
     }
 
-    // 2. Add newly uploaded images
     if (newUploadedImageUrls && Array.isArray(newUploadedImageUrls)) {
       finalImageUrls = finalImageUrls.concat(newUploadedImageUrls);
     }
 
-    // Identify images to delete from Cloudinary
     const imagesToDeleteFromCloudinary = product.images.filter(img =>
         !finalImageUrls.some(finalImg => finalImg.url === img.url)
     );
@@ -348,18 +357,15 @@ exports.updateProduct = async (req, res) => {
           console.log(`Deleted Cloudinary image: ${publicId}`);
         } catch (cloudinaryErr) {
           console.error(`Failed to delete Cloudinary image ${publicId}:`, cloudinaryErr);
-          // Log error but continue with other operations to avoid breaking the update
         }
       }
     }
 
-    // Update product fields
-    // Use the `set` method for updates, it handles modified paths
     if (name !== undefined) product.name = name;
     if (description !== undefined) product.description = description;
     if (richDescription !== undefined) product.richDescription = richDescription;
     if (price !== undefined) product.price = parseFloat(price);
-    if (originalPrice !== undefined) product.originalPrice = originalPrice ? parseFloat(originalPrice) : null; // Allow null
+    if (originalPrice !== undefined) product.originalPrice = originalPrice ? parseFloat(originalPrice) : null;
     if (category !== undefined) {
       const existingCategory = await Category.findById(category);
       if (!existingCategory) {
@@ -369,7 +375,6 @@ exports.updateProduct = async (req, res) => {
     }
     if (brand !== undefined) product.brand = brand;
     if (sku !== undefined) {
-        // Check for duplicate SKU only if it's changing AND if it's not the current product's SKU
         if (sku !== product.sku) {
             const existingProductWithSku = await Product.findOne({ sku: sku });
             if (existingProductWithSku) {
@@ -393,10 +398,9 @@ exports.updateProduct = async (req, res) => {
     if (tags !== undefined) product.tags = Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(s => s.trim()).filter(s => s !== '') : []);
 
     product.images = finalImageUrls;
-    // Set thumbnail based on new image array
     product.thumbnail = (finalImageUrls && finalImageUrls.length > 0) ? finalImageUrls[0].url : '/placehold.co/400x400/CCCCCC/000000?text=No+Image';
 
-    await product.save(); // This will trigger pre-save hooks
+    await product.save();
     res.status(200).json(product);
   } catch (err) {
     console.error('Error updating product:', err);
@@ -439,11 +443,11 @@ exports.deleteProduct = async (req, res) => {
             console.log(`Deleted Cloudinary image for product delete: ${publicId}`);
           } catch (cloudinaryErr) {
             console.error(`Failed to delete Cloudinary image ${publicId} during product delete:`, cloudinaryErr);
-            // Log error but do not stop deletion of product document
           }
         }
       }
     }
+
     await Product.findByIdAndDelete(id);
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (err) {
@@ -493,7 +497,6 @@ exports.deleteProductImage = async (req, res) => {
         console.log(`Deleted Cloudinary image: ${publicId}`);
       } catch (cloudinaryErr) {
         console.error(`Failed to delete Cloudinary image ${publicId}:`, cloudinaryErr);
-        // Log error but proceed as the DB record is updated
       }
     }
 
@@ -640,7 +643,7 @@ exports.addProductReview = async (req, res) => {
     }
 
     // Update average rating and number of reviews
-    product.updateAverageRating(); // This method is defined in your Product model
+    product.updateAverageRating();
     await product.save();
 
   } catch (err) {
