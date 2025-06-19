@@ -22,6 +22,10 @@ const categorySchema = new mongoose.Schema({
     type: String,
     default: '/placehold.co/400x400/CCCCCC/000000?text=No+Image', // Default placeholder image
   },
+  imagePublicId: { // Cloudinary public ID for easy deletion
+    type: String,
+    default: '',
+  },
   parent: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
