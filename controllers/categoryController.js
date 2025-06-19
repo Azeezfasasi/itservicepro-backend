@@ -390,12 +390,21 @@ exports.getCategoryTree = async (req, res) => {
 
 // Create new category (Admin Only)
 exports.createCategory = async (req, res) => {
+    console.log('--- Backend: Entering createCategory controller ---');
+    console.log('Backend: req.body received:', req.body);
+    console.log('Backend: req.file received:', req.file);
+    console.log('Backend: name from req.body:', req.body.name);
   try {
     let { name, description, parent, sortOrder, isActive } = req.body;
 
-    // Convert boolean string to boolean
-    isActive = isActive === 'true'; // FormData sends boolean as string 'true' or 'false'
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      console.error('Backend Validation: Category name is missing or empty after parsing.');
+      return res.status(400).json({ error: 'Category name is required from backend check.' });
+    }
+    name = name.trim();
 
+    // Convert boolean string to boolean
+    isActive = isActive === 'true';
     // Handle image upload to Cloudinary
     let imageUrl = '';
     let imagePublicId = '';
@@ -429,11 +438,11 @@ exports.createCategory = async (req, res) => {
       name,
       slug,
       description,
-      parent: parent || null, // If parent is an empty string, store as null
+      parent: parent || null, 
       sortOrder: parseInt(sortOrder) || 0,
       isActive,
       image: imageUrl, // Store the Cloudinary URL
-      imagePublicId: imagePublicId // Store Cloudinary public ID for easy deletion
+      imagePublicId: imagePublicId 
     });
 
     const category = await newCategory.save();
