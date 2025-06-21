@@ -17,12 +17,13 @@ async function getNextSequenceValue(sequenceName) {
 // Helper function to format the order number
 // Example: ORD-YYYYMMDD-000001
 function formatOrderNumber(sequenceNumber) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed
-    const day = now.getDate().toString().padStart(2, '0');
-    const paddedSequence = String(sequenceNumber).padStart(7, '0'); // Pad with leading zeros to 7 digits
-    return `ORD-${year}${month}${day}-${paddedSequence}`;
+    // const now = new Date();
+    // const year = now.getFullYear();
+    // const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    // const day = now.getDate().toString().padStart(2, '0');
+    const paddedSequence = String(sequenceNumber).padStart(9, '0'); // Pad with leading zeros to 7 digits
+    // return `ORD-${year}${month}${day}-${paddedSequence}`;
+    return `{paddedSequence}`;
     // Or simply: return `ORD-${paddedSequence}`; if you prefer shorter numbers
 }
 
