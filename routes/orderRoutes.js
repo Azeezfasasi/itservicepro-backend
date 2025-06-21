@@ -24,4 +24,7 @@ router.put('/:id/status', auth, authorizeRoles, orderController.updateOrderStatu
 // DELETE /api/orders/:id
 router.delete('/:id', auth, authorizeRoles, orderController.deleteOrder);
 
+// Public route for checking order status by order number /api/orders/public-status/:orderNumber
+router.get('/public-status/:orderNumber', orderController.getPublicOrderStatus);
+
 module.exports = router;
