@@ -23,7 +23,7 @@ function formatOrderNumber(sequenceNumber) {
     // const day = now.getDate().toString().padStart(2, '0');
     const paddedSequence = String(sequenceNumber).padStart(9, '0'); // Pad with leading zeros to 7 digits
     // return `ORD-${year}${month}${day}-${paddedSequence}`;
-    return `{paddedSequence}`;
+    return `ITS${paddedSequence}`;
     // Or simply: return `ORD-${paddedSequence}`; if you prefer shorter numbers
 }
 
