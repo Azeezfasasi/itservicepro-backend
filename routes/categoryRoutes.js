@@ -3,7 +3,7 @@ const router = express.Router();
 const categoryController = require('../controllers/categoryController');
 const { auth, authorizeRoles } = require('../middleware/auth');
 
-// Public routes
+// Public routes /api/categories
 router.get('/', categoryController.getAllCategories);
 router.get('/tree', categoryController.getCategoryTree);
 router.get('/:id', categoryController.getCategoryById);
