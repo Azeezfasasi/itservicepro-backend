@@ -49,6 +49,13 @@ const orderSchema = mongoose.Schema({
         ref: 'User',
         required: true,
     },
+    orderNumber: { // Unique order number
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+        uppercase: true
+    },
     orderItems: [orderItemSchema], // Array of products ordered
     shippingAddress: {
         type: shippingAddressSchema,
