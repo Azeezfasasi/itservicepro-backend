@@ -3,6 +3,10 @@ const Product = require('../models/Product'); // To update stock quantity
 const User = require('../models/User'); // To update user's order history
 
 exports.createOrder = async (req, res) => {
+    console.log('--- Order Controller: Entering createOrder ---');
+    console.log('Order Controller: req.body:', JSON.stringify(req.body, null, 2));
+    console.log('Order Controller: req.user:', req.user ? { _id: req.user._id, email: req.user.email } : 'Not authenticated');
+
     try {
         const {
             orderItems,
@@ -16,25 +20,31 @@ exports.createOrder = async (req, res) => {
         } = req.body;
 
         if (orderItems && orderItems.length === 0) {
+            console.warn('Order Controller: No order items provided.');
             return res.status(400).json({ message: 'No order items' });
         }
+        console.log(`Order Controller: Received ${orderItems.length} order items.`);
 
         // Validate product IDs and stock quantities (Crucial for inventory management)
         const productsInOrder = await Product.find({
             '_id': { $in: orderItems.map(x => x.productId) }
         });
+        console.log(`Order Controller: Found ${productsInOrder.length} products in DB.`);
 
         const invalidItems = [];
         for (const item of orderItems) {
             const product = productsInOrder.find(p => p._id.toString() === item.productId.toString());
             if (!product) {
                 invalidItems.push(`Product with ID ${item.productId} not found.`);
+                console.error(`Order Controller: Product missing - ID ${item.productId}`);
             } else if (product.stockQuantity < item.quantity) {
                 invalidItems.push(`Not enough stock for ${product.name}. Available: ${product.stockQuantity}, Requested: ${item.quantity}.`);
+                console.error(`Order Controller: Insufficient stock for ${product.name} (ID: ${item.productId}). Available: ${product.stockQuantity}, Requested: ${item.quantity}.`);
             }
         }
 
         if (invalidItems.length > 0) {
+            console.error('Order Controller: Order validation failed due to invalid items:', invalidItems);
             return res.status(400).json({ message: 'Order validation failed:', errors: invalidItems });
         }
 
@@ -57,8 +67,10 @@ exports.createOrder = async (req, res) => {
             // },
             status: 'Processing', 
         });
+        console.log('Order Controller: New order object created:', JSON.stringify(newOrder, null, 2));
 
         const createdOrder = await newOrder.save();
+        console.log('Order Controller: Order saved to DB successfully. Order ID:', createdOrder._id);
 
         // Decrement stock quantities for ordered products
         for (const item of orderItems) {
@@ -76,6 +88,23 @@ exports.createOrder = async (req, res) => {
 
     } catch (error) {
         console.error('Error creating order:', error);
+        console.error('--- Order Controller: UNHANDLED ERROR during createOrder ---');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+         // Check for specific Mongoose validation errors
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            console.error('Mongoose Validation Error Details:', error.errors);
+            return res.status(400).json({ message: 'Order validation failed', errors: messages });
+        }
+
+        // Check for CastError (e.g., invalid ObjectId)
+        if (error.name === 'CastError') {
+            console.error(`CastError on path '${error.path}' with value '${error.value}'`);
+            return res.status(400).json({ message: `Invalid ID format for ${error.path}`, details: error.message });
+        }
+        
         res.status(500).json({ message: 'Failed to create order', details: error.message });
     }
 };
