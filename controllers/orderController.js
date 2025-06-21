@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product'); // To update stock quantity
-const User = require('../models/User'); // To update user's order history
+const User = require('../models/User'); 
+const mongoose = require('mongoose');
 
 exports.createOrder = async (req, res) => {
     console.log('--- Order Controller: Entering createOrder ---');
@@ -29,22 +30,24 @@ exports.createOrder = async (req, res) => {
         const productIds = orderItems
             .map(item => {
                 // Ensure productId is a string before pushing to array for query
+                // It's crucial that `item.productId` itself should already be the string ID from the cart.
+                // If the cart has full product objects, the frontend mapping needs to ensure it's `item.productId._id`.
                 if (typeof item.productId === 'string' && mongoose.Types.ObjectId.isValid(item.productId)) {
                     return item.productId;
                 }
-                // If it's an object with _id, try to use that
-                if (item.productId && typeof item.productId._id === 'string' && mongoose.Types.ObjectId.isValid(item.productId._id)) {
-                    return item.productId._id;
+                // Fallback for cases where frontend might send the whole product object
+                if (item.productId && typeof item.productId === 'object' && item.productId._id && mongoose.Types.ObjectId.isValid(item.productId._id)) {
+                    return item.productId._id.toString(); // Ensure it's a string
                 }
                 // Log and return null for invalid productIds to filter out later
-                console.warn(`Order Controller: Invalid productId format found:`, item.productId);
-                return null;
+                console.warn(`Order Controller: Invalid productId format found in orderItems. Skipping item:`, item.productId);
+                return null; // Will be filtered out
             })
             .filter(id => id !== null); // Filter out any nulls
 
         if (productIds.length === 0 && orderItems.length > 0) {
-            console.error('Order Controller: No valid product IDs found in order items.');
-            return res.status(400).json({ message: 'No valid product IDs in order items.' });
+            console.error('Order Controller: No valid product IDs found in order items after filtering.');
+            return res.status(400).json({ message: 'No valid product IDs in order items after validation.' });
         }
         console.log('Order Controller: Product IDs to check:', productIds);
 
@@ -52,23 +55,32 @@ exports.createOrder = async (req, res) => {
         const productsInOrder = await Product.find({
             '_id': { $in: productIds }
         });
-        console.log(`Order Controller: Found ${productsInOrder.length} products in DB.`);
+        console.log(`Order Controller: Found ${productsInOrder.length} products in DB for provided IDs.`);
 
 
         const invalidItems = [];
         for (const item of orderItems) {
-            // Ensure item.productId is consistently handled as a string ID here
-            const currentProductId = item.productId && typeof item.productId === 'object' && item.productId._id
-                                    ? item.productId._id // If it's an object, get _id
-                                    : item.productId; // Otherwise, assume it's already the ID string
+            let currentProductId;
 
-            if (!currentProductId || !mongoose.Types.ObjectId.isValid(currentProductId)) {
-                 invalidItems.push(`Invalid product ID format for item: ${item.name || 'Unknown Product'}. ID: ${item.productId}`);
-                 console.error(`Order Controller: Invalid product ID format found for item ${item.name}. ID: ${item.productId}`);
-                 continue; // Skip to next item
+            // Determine the actual productId string for validation
+            if (typeof item.productId === 'string') {
+                currentProductId = item.productId;
+            } else if (item.productId && typeof item.productId === 'object' && item.productId._id) {
+                currentProductId = item.productId._id.toString();
+            } else {
+                // This branch handles `productId: null` or malformed objects without _id
+                invalidItems.push(`Invalid product ID format for item: ${item.name || 'Unknown Product'}. ID: ${item.productId}`);
+                console.error(`Order Controller: Invalid product ID format found for item ${item.name}. ID: ${item.productId}`);
+                continue; // Skip to next item
             }
 
-            const product = productsInOrder.find(p => p._id.toString() === currentProductId.toString());
+            if (!mongoose.Types.ObjectId.isValid(currentProductId)) {
+                 invalidItems.push(`Invalid product ID format for item: ${item.name || 'Unknown Product'}. ID: ${currentProductId}`);
+                 console.error(`Order Controller: Product ID is not a valid ObjectId: ${currentProductId}`);
+                 continue;
+            }
+
+            const product = productsInOrder.find(p => p._id.toString() === currentProductId); // currentProductId is already string
             if (!product) {
                 invalidItems.push(`Product with ID ${currentProductId} not found.`);
                 console.error(`Order Controller: Product missing - ID ${currentProductId}`);
@@ -85,20 +97,42 @@ exports.createOrder = async (req, res) => {
         console.log('Order Controller: Product and stock validation passed.');
 
         // Reconstruct orderItems with correct productId if needed (ensure it's just the ID)
-        const finalOrderItems = orderItems.map(item => ({
-            productId: item.productId && typeof item.productId === 'object' && item.productId._id
-                       ? item.productId._id // Extract _id if it's an object
-                       : item.productId, // Otherwise, assume it's already a string ID
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            image: item.image
-        }));
+        const finalOrderItems = orderItems.map(item => {
+            let pId;
+            if (typeof item.productId === 'string') {
+                pId = item.productId;
+            } else if (item.productId && typeof item.productId === 'object' && item.productId._id) {
+                pId = item.productId._id.toString(); // Ensure it's a string
+            } else {
+                // This case should ideally be caught by initial validation, but for safety
+                console.warn(`Order Controller: Attempting to map order item with invalid productId (will be excluded):`, item.productId);
+                return null; // This will be filtered out next
+            }
+
+            if (!mongoose.Types.ObjectId.isValid(pId)) {
+                console.warn(`Order Controller: Mapped product ID is not a valid ObjectId (will be excluded):`, pId);
+                return null;
+            }
+
+            return {
+                productId: pId,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                image: item.image
+            };
+        }).filter(item => item !== null); // Filter out any items that couldn't get a valid productId
+
+        if (finalOrderItems.length === 0) {
+            console.error('Order Controller: All order items were invalid or filtered out.');
+            return res.status(400).json({ message: 'All items in your order were invalid.' });
+        }
+        console.log('Order Controller: Final order items after cleanup:', JSON.stringify(finalOrderItems, null, 2));
 
 
         const newOrder = new Order({
             userId: req.user._id,
-            orderItems: finalOrderItems, // Use the cleaned order items
+            orderItems: finalOrderItems, // Use the cleaned and validated order items
             shippingAddress,
             paymentMethod,
             itemsPrice,
@@ -117,13 +151,13 @@ exports.createOrder = async (req, res) => {
 
         for (const item of finalOrderItems) { // Use finalOrderItems for stock update
             const product = productsInOrder.find(p => p._id.toString() === item.productId.toString());
-            if (product) {
+            if (product) { // Ensure product exists before updating stock
                 await Product.findByIdAndUpdate(
                     item.productId,
                     { $inc: { stockQuantity: -item.quantity } },
                     { new: true, runValidators: true }
                 );
-                console.log(`Order Controller: Decremented stock for product ${item.name} by ${item.quantity}.`);
+                console.log(`Order Controller: Decremented stock for product ${item.name} (ID: ${item.productId}) by ${item.quantity}.`);
             }
         }
 
