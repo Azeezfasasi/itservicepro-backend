@@ -9,6 +9,7 @@ const quoteRoutes = require('./routes/quoteRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -39,6 +40,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/api', quoteRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
