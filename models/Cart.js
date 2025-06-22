@@ -23,7 +23,7 @@ const cartItemSchema = mongoose.Schema({
         required: true,
         min: 1, // Quantity must be at least 1
     },
-}, { _id: false }); // Do not create an _id for sub-documents by default
+}, { _id: true });
 
 const cartSchema = mongoose.Schema({
     userId: {
