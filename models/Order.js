@@ -62,17 +62,23 @@ const orderSchema = mongoose.Schema({
         required: true,
     },
     paymentMethod: {
-        type: String, // e.g., 'Credit Card', 'Paypal', 'Cash on Delivery'
+        type: String, 
         required: true,
+        enum: [
+            'Cash on Delivery',
+            'Bank Transfer',
+            'Credit/Debit Card',
+            'WhatsApp'
+        ]
     },
     paymentResult: {
         type: paymentResultSchema,
         default: {},
     },
     itemsPrice: { // Sum of all order items' prices
-        type: Number,
+        type: Object,
         required: true,
-        default: 0.0,
+        default: {},
     },
     taxPrice: { 
         type: Number,
