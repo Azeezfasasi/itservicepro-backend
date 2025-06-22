@@ -346,39 +346,43 @@ exports.updateProduct = async (req, res) => {
       parsedExistingImageUrls = existingImageUrls;
     }
 
+    // Ensure newUploadedImageUrls is always an array of objects with url property
+    let parsedNewUploadedImageUrls = [];
+    if (newUploadedImageUrls && typeof newUploadedImageUrls === 'string') {
+      try {
+        parsedNewUploadedImageUrls = JSON.parse(newUploadedImageUrls);
+      } catch (e) {
+        parsedNewUploadedImageUrls = [];
+      }
+    } else if (Array.isArray(newUploadedImageUrls)) {
+      parsedNewUploadedImageUrls = newUploadedImageUrls;
+    }
+
     // Re-parse array-like fields from comma-separated strings if sent via FormData
     const parsedColors = typeof colors === 'string' ? colors.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(colors) ? colors : []);
     const parsedSizes = typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(sizes) ? sizes : []);
     const parsedTags = typeof tags === 'string' ? tags.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(tags) ? tags : []);
 
-    // Collect all image URLs that should remain/be added
+    // Collect all image objects that should remain/be added
     let finalImageUrls = [];
-    // 1. Add existing images that the frontend sent back (after parsing)
-    finalImageUrls = product.images.filter(img =>
-      parsedExistingImageUrls.includes(img.url)
-    );
-    // 2. Add newly uploaded images from Cloudinary processing
-    if (newUploadedImageUrls && Array.isArray(newUploadedImageUrls)) {
-      finalImageUrls = finalImageUrls.concat(newUploadedImageUrls);
+    if (parsedExistingImageUrls && parsedExistingImageUrls.length > 0) {
+      const urlList = parsedExistingImageUrls.map(img => typeof img === 'string' ? img : (img && img.url ? img.url : null)).filter(Boolean);
+      finalImageUrls = product.images.filter(img => urlList.includes(img.url));
     }
-
-    // Delete images from Cloudinary that are no longer present
-    const imagesToDeleteFromCloudinary = product.images.filter(img =>
-      !finalImageUrls.some(finalImg => finalImg.url === img.url)
-    );
-    for (const img of imagesToDeleteFromCloudinary) {
-      const publicId = getPublicIdFromCloudinaryUrl(img.url);
-      if (publicId) {
-        try {
-          await cloudinary.uploader.destroy(publicId);
-          console.log(`Deleted Cloudinary image: ${publicId}`);
-        } catch (cloudinaryErr) {
-          console.error(`Failed to delete Cloudinary image ${publicId}:`, cloudinaryErr);
+    if (parsedNewUploadedImageUrls && parsedNewUploadedImageUrls.length > 0) {
+      for (const img of parsedNewUploadedImageUrls) {
+        if (img && img.url && !finalImageUrls.some(e => e.url === img.url)) {
+          if (!img.public_id) {
+            const found = product.images.find(e => e.url === img.url);
+            img.public_id = found ? found.public_id : undefined;
+          }
+          finalImageUrls.push(img);
         }
       }
     }
+    finalImageUrls = finalImageUrls.filter(img => img && img.url);
 
-    // Update product fields
+    // Update product fields (do NOT assign product.images or product.thumbnail yet)
     if (name !== undefined) product.name = name;
     if (description !== undefined) product.description = description;
     if (richDescription !== undefined) product.richDescription = richDescription;
@@ -406,7 +410,6 @@ exports.updateProduct = async (req, res) => {
     if (discountPercentage !== undefined) product.discountPercentage = parseFloat(discountPercentage);
     if (status !== undefined) product.status = status;
     if (weight !== undefined) product.weight = weight ? parseFloat(weight) : null;
-    // Handle dimensions - ensuring it's an object, and fields are parsed to float
     if (dimensions) {
       product.dimensions = {
         length: dimensions.length ? parseFloat(dimensions.length) : null,
@@ -424,11 +427,27 @@ exports.updateProduct = async (req, res) => {
     product.sizes = parsedSizes;
     product.tags = parsedTags;
 
+    // Assign images and thumbnail just before saving
+    const originalImages = product.images;
     product.images = finalImageUrls;
-    product.thumbnail = (finalImageUrls && finalImageUrls.length > 0) ? finalImageUrls[0].url : '/placehold.co/400x400/CCCCCC/000000?text=No+Image';
+    product.thumbnail = (finalImageUrls && finalImageUrls.length > 0) ? finalImageUrls[0].url : null;
 
+    // Save product first, then delete images from Cloudinary (do not block response)
     await product.save();
     res.status(200).json(product);
+
+    // After responding, clean up removed images from Cloudinary
+    const imagesToDeleteFromCloudinary = originalImages.filter(img =>
+      !finalImageUrls.some(finalImg => finalImg.url === img.url)
+    );
+    for (const img of imagesToDeleteFromCloudinary) {
+      const publicId = getPublicIdFromCloudinaryUrl(img.url);
+      if (publicId) {
+        cloudinary.uploader.destroy(publicId)
+          .then(() => console.log(`Deleted Cloudinary image: ${publicId}`))
+          .catch(cloudinaryErr => console.error(`Failed to delete Cloudinary image ${publicId}:`, cloudinaryErr));
+      }
+    }
   } catch (err) {
     console.error('Error updating product:', err);
     if (err.name === 'ValidationError') {
