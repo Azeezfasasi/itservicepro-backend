@@ -45,6 +45,7 @@ exports.addToCart = async (req, res) => {
         const newItem = {
             productId: product._id,
             name: product.name,
+            slug: product.slug, // <-- Add slug here
             // Use the first image URL or a placeholder if no images exist
             image: (product.images && product.images.length > 0) ? product.images[0].url : '/placehold.co/100x100/CCCCCC/000000?text=No+Image',
             price: product.onSale ? product.salePrice : product.price, // Use salePrice if on sale
@@ -67,6 +68,7 @@ exports.addToCart = async (req, res) => {
                 // Optional: Update price or image if product details changed since it was added
                 existingItem.price = newItem.price; // Always update to current price
                 existingItem.image = newItem.image; // Always update to current image
+                existingItem.slug = newItem.slug; // Always update to current slug
             } else {
                 // Item not in cart, add new item
                 cart.items.push(newItem);
