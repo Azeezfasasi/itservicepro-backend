@@ -46,6 +46,7 @@ exports.uploadMiddlewareMemory = multer({
 // Define the async image processing middleware separately
 exports.processUploadedImages = async (req, res, next) => {
   try {
+    console.log('processUploadedImages: req.files:', req.files);
     let uploadedImages = [];
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       for (const image of req.files) {
