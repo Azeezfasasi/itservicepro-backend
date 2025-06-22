@@ -134,6 +134,10 @@ exports.removeCartItem = async (req, res) => {
     const { itemId } = req.params;
     const userId = req.user._id;
 
+    if (!itemId) {
+        return res.status(400).json({ message: 'Cart item ID is required.' });
+    }
+
     try {
         let cart = await Cart.findOne({ userId });
 
@@ -142,7 +146,7 @@ exports.removeCartItem = async (req, res) => {
         }
 
         const initialLength = cart.items.length;
-        cart.items = cart.items.filter(item => item._id.toString() !== itemId);
+        cart.items = cart.items.filter(item => item._id && item._id.toString() !== itemId);
 
         if (cart.items.length === initialLength) {
             return res.status(404).json({ message: 'Cart item not found.' });
