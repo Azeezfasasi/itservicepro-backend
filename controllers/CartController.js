@@ -131,7 +131,7 @@ exports.updateCartItemQuantity = async (req, res) => {
 };
 
 exports.removeCartItem = async (req, res) => {
-    const { productId } = req.params;
+    const { itemId } = req.params;
     const userId = req.user._id;
 
     try {
@@ -142,14 +142,14 @@ exports.removeCartItem = async (req, res) => {
         }
 
         const initialLength = cart.items.length;
-        cart.items = cart.items.filter(item => item.productId.toString() !== productId);
+        cart.items = cart.items.filter(item => item._id.toString() !== itemId);
 
         if (cart.items.length === initialLength) {
-            return res.status(404).json({ message: 'Product not found in cart.' });
+            return res.status(404).json({ message: 'Cart item not found.' });
         }
 
         await cart.save();
-        res.status(200).json({ message: 'Product removed from cart.', cart });
+        res.status(200).json({ message: 'Cart item removed.', cart });
     } catch (error) {
         console.error('Error removing cart item:', error);
         res.status(500).json({ message: 'Server Error', details: error.message });

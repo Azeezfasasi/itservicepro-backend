@@ -12,8 +12,8 @@ router.post('/', auth, cartController.addToCart);
 // PUT update cart item quantity - /api/cart/:productId
 router.put('/:productId', auth, cartController.updateCartItemQuantity);
 
-// DELETE remove from cart - /api/cart/:productId
-router.delete('/:productId', auth, cartController.removeCartItem);
+// DELETE remove from cart - /api/cart/item/:itemId
+router.delete('/item/:itemId', auth, cartController.removeCartItem);
 
 // DELETE clear cart - /api/cart
 router.delete('/', auth, cartController.clearCart);
