@@ -46,29 +46,24 @@ exports.uploadMiddlewareMemory = multer({
 // Define the async image processing middleware separately
 exports.processUploadedImages = async (req, res, next) => {
   try {
-    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      req.body.newUploadedImageUrls = [];
-      return next();
+    let uploadedImages = [];
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      for (const image of req.files) {
+        // Correctly form the Data URI from the Buffer
+        const dataUri = `data:${image.mimetype};base64,${image.buffer.toString('base64')}`;
+        // Use the original filename as the public_id for Cloudinary
+        const uploadOptions = {
+          folder: 'products',
+          resource_type: 'auto', // Automatically determine file type
+        };
+        const uploadedImage = await cloudinary.uploader.upload(dataUri, uploadOptions);
+        uploadedImages.push({
+          url: uploadedImage.secure_url,
+          public_id: uploadedImage.public_id,
+        });
+      }
     }
-
-    const uploadedImages = [];
-    for (const image of req.files) {
-      // Correctly form the Data URI from the Buffer
-      const dataUri = `data:${image.mimetype};base64,${image.buffer.toString('base64')}`;
-      // Use the original filename as the public_id for Cloudinary
-      const uploadOptions = {
-        folder: 'products',
-        resource_type: 'auto', // Automatically determine file type
-      };
-
-      const uploadedImage = await cloudinary.uploader.upload(dataUri, uploadOptions);
-      
-      uploadedImages.push({
-        url: uploadedImage.secure_url,
-        public_id: uploadedImage.public_id, 
-      });
-    }
-
+    // Always set this, even if empty
     req.body.newUploadedImageUrls = uploadedImages;
     next();
   } catch (error) {
@@ -335,27 +330,30 @@ exports.updateProduct = async (req, res) => {
 
     // Robustly parse existingImageUrls (handle JSON string or array)
     let parsedExistingImageUrls = [];
-    if (existingImageUrls && typeof existingImageUrls === 'string') {
-      try {
-        parsedExistingImageUrls = JSON.parse(existingImageUrls);
-      } catch (e) {
-        console.error('Error parsing existingImageUrls:', e);
-        parsedExistingImageUrls = [];
+    if (existingImageUrls) {
+      if (typeof existingImageUrls === 'string') {
+        try {
+          parsedExistingImageUrls = JSON.parse(existingImageUrls);
+        } catch {
+          parsedExistingImageUrls = [];
+        }
+      } else if (Array.isArray(existingImageUrls)) {
+        parsedExistingImageUrls = existingImageUrls;
       }
-    } else if (Array.isArray(existingImageUrls)) {
-      parsedExistingImageUrls = existingImageUrls;
     }
 
     // Ensure newUploadedImageUrls is always an array of objects with url property
     let parsedNewUploadedImageUrls = [];
-    if (newUploadedImageUrls && typeof newUploadedImageUrls === 'string') {
-      try {
-        parsedNewUploadedImageUrls = JSON.parse(newUploadedImageUrls);
-      } catch (e) {
-        parsedNewUploadedImageUrls = [];
+    if (newUploadedImageUrls) {
+      if (typeof newUploadedImageUrls === 'string') {
+        try {
+          parsedNewUploadedImageUrls = JSON.parse(newUploadedImageUrls);
+        } catch {
+          parsedNewUploadedImageUrls = [];
+        }
+      } else if (Array.isArray(newUploadedImageUrls)) {
+        parsedNewUploadedImageUrls = newUploadedImageUrls;
       }
-    } else if (Array.isArray(newUploadedImageUrls)) {
-      parsedNewUploadedImageUrls = newUploadedImageUrls;
     }
 
     // Re-parse array-like fields from comma-separated strings if sent via FormData
@@ -363,19 +361,18 @@ exports.updateProduct = async (req, res) => {
     const parsedSizes = typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(sizes) ? sizes : []);
     const parsedTags = typeof tags === 'string' ? tags.split(',').map(s => s.trim()).filter(s => s !== '') : (Array.isArray(tags) ? tags : []);
 
-    // Collect all image objects that should remain/be added
+    // Merge images: always merge both arrays, do not filter out product.images by urlList
     let finalImageUrls = [];
     if (parsedExistingImageUrls && parsedExistingImageUrls.length > 0) {
-      const urlList = parsedExistingImageUrls.map(img => typeof img === 'string' ? img : (img && img.url ? img.url : null)).filter(Boolean);
-      finalImageUrls = product.images.filter(img => urlList.includes(img.url));
+      for (const img of parsedExistingImageUrls) {
+        if (img && img.url && !finalImageUrls.some(e => e.url === img.url)) {
+          finalImageUrls.push(img);
+        }
+      }
     }
     if (parsedNewUploadedImageUrls && parsedNewUploadedImageUrls.length > 0) {
       for (const img of parsedNewUploadedImageUrls) {
         if (img && img.url && !finalImageUrls.some(e => e.url === img.url)) {
-          if (!img.public_id) {
-            const found = product.images.find(e => e.url === img.url);
-            img.public_id = found ? found.public_id : undefined;
-          }
           finalImageUrls.push(img);
         }
       }
