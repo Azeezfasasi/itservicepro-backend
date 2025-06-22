@@ -430,7 +430,12 @@ exports.updateProduct = async (req, res) => {
     // Assign images and thumbnail just before saving
     const originalImages = product.images;
     product.images = finalImageUrls;
-    product.thumbnail = (finalImageUrls && finalImageUrls.length > 0) ? finalImageUrls[0].url : null;
+    if (finalImageUrls && finalImageUrls.length > 0) {
+      product.thumbnail = finalImageUrls[0].url;
+    } else {
+      product.images = [];
+      product.thumbnail = '/placehold.co/400x400/CCCCCC/000000?text=No+Image';
+    }
 
     // Save product first, then delete images from Cloudinary (do not block response)
     await product.save();
