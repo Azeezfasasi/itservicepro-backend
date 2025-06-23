@@ -222,7 +222,7 @@ exports.createOrder = async (req, res) => {
                 <ul>
                     ${createdOrder.orderItems.map(item => `<li>${item.name} x ${item.quantity} (₦${item.price})</li>`).join('')}
                 </ul>
-                <p><strong>Shipping Address:</strong> ${createdOrder.shippingAddress.address}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.postalCode}, ${createdOrder.shippingAddress.country}</p>
+                <p><strong>Shipping Address:</strong> ${createdOrder.shippingAddress.address1}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.zipCode}, ${createdOrder.shippingAddress.country}</p>
                 <p><strong>Payment Method:</strong> ${createdOrder.paymentMethod}</p>
                 <p><strong>Payment Status:</strong> ${createdOrder.isPaid ? 'Paid' : 'Not Paid'}</p>
                 <p>We will notify you once your order is shipped.</p>
