@@ -228,7 +228,7 @@ exports.createOrder = async (req, res) => {
                 <p>We will notify you once your order is shipped.</p>
                 <p>Thank you for shopping with us!</p>
                 <p>Best regards,</p>
-                <p>IT Service Pro Team - www.itservicepro.netlify.app</p>
+                <p>IT Service Pro Team - <a href="https://itservicepro.netlify.app">Visit our website for more details.</a></p>
             `;
             // Email to customer
             await sendOrderNotification({
