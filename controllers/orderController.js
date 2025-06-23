@@ -15,10 +15,18 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Helper to send order notification emails
-async function sendOrderNotification({ to, subject, html }) {
+// Helper to get admin emails from .env (comma-separated)
+function getAdminEmails() {
+    const emails = process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || '';
+    return emails.split(',').map(e => e.trim()).filter(Boolean);
+}
+
+// Helper to send order notification emails (with optional cc/bcc)
+async function sendOrderNotification({ to, subject, html, cc, bcc }) {
     await transporter.sendMail({
         to,
+        cc,
+        bcc,
         from: process.env.GMAIL_USER,
         subject,
         html
@@ -203,7 +211,7 @@ exports.createOrder = async (req, res) => {
         try {
             // Fetch user details for email
             const user = await User.findById(req.user._id);
-            const adminEmail = process.env.ADMIN_EMAIL;
+            const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
                 <h2>Order Confirmation - ${createdOrder.orderNumber}</h2>
                 <p>Thank you for your order, ${user.name}!</p>
@@ -222,10 +230,11 @@ exports.createOrder = async (req, res) => {
                 subject: `Your Order Confirmation - ${createdOrder.orderNumber}`,
                 html: orderDetailsHtml
             });
-            // Email to admin
-            if (adminEmail) {
+            // Email to all admins (as to/cc)
+            if (adminEmails.length > 0) {
                 await sendOrderNotification({
-                    to: adminEmail,
+                    to: adminEmails[0],
+                    cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
                     subject: `New Order Placed - ${createdOrder.orderNumber}`,
                     html: `<p>New order placed by ${user.name} (${user.email})</p>` + orderDetailsHtml
                 });
@@ -322,7 +331,7 @@ exports.updateOrderToDelivered = async (req, res) => {
         // --- EMAIL NOTIFICATIONS ---
         try {
             const user = await User.findById(order.userId);
-            const adminEmail = process.env.ADMIN_EMAIL;
+            const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
                 <h2>Order Delivered - ${order.orderNumber}</h2>
                 <p>Order for ${user.name} (${user.email}) has been marked as <strong>Delivered</strong>.</p>
@@ -336,10 +345,11 @@ exports.updateOrderToDelivered = async (req, res) => {
                 subject: `Your Order Has Been Delivered - ${order.orderNumber}`,
                 html: orderDetailsHtml
             });
-            // Email to admin
-            if (adminEmail) {
+            // Email to all admins (as to/cc)
+            if (adminEmails.length > 0) {
                 await sendOrderNotification({
-                    to: adminEmail,
+                    to: adminEmails[0],
+                    cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
                     subject: `Order Delivered - ${order.orderNumber}`,
                     html: orderDetailsHtml
                 });
@@ -384,7 +394,7 @@ exports.updateOrderStatus = async (req, res) => {
         // --- EMAIL NOTIFICATIONS ---
         try {
             const user = await User.findById(order.userId);
-            const adminEmail = process.env.ADMIN_EMAIL;
+            const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
                 <h2>Order Status Updated - ${order.orderNumber}</h2>
                 <p>Order for ${user.name} (${user.email}) status updated to <strong>${order.status}</strong>.</p>
@@ -398,10 +408,11 @@ exports.updateOrderStatus = async (req, res) => {
                 subject: `Order Status Updated - ${order.orderNumber}`,
                 html: orderDetailsHtml
             });
-            // Email to admin
-            if (adminEmail) {
+            // Email to all admins (as to/cc)
+            if (adminEmails.length > 0) {
                 await sendOrderNotification({
-                    to: adminEmail,
+                    to: adminEmails[0],
+                    cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
                     subject: `Order Status Updated - ${order.orderNumber}`,
                     html: orderDetailsHtml
                 });
