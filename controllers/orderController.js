@@ -3,6 +3,27 @@ const Product = require('../models/Product'); // To update stock quantity
 const User = require('../models/User'); 
 const Counter = require('../models/Counter'); 
 const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
+require('dotenv').config();
+
+// Nodemailer transporter (reuse config from userController.js)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS
+    }
+});
+
+// Helper to send order notification emails
+async function sendOrderNotification({ to, subject, html }) {
+    await transporter.sendMail({
+        to,
+        from: process.env.GMAIL_USER,
+        subject,
+        html
+    });
+}
 
 // Helper function to get and increment sequence value
 async function getNextSequenceValue(sequenceName) {
@@ -178,6 +199,42 @@ exports.createOrder = async (req, res) => {
             }
         }
 
+        // --- EMAIL NOTIFICATIONS ---
+        try {
+            // Fetch user details for email
+            const user = await User.findById(req.user._id);
+            const adminEmail = process.env.ADMIN_EMAIL;
+            const orderDetailsHtml = `
+                <h2>Order Confirmation - ${createdOrder.orderNumber}</h2>
+                <p>Thank you for your order, ${user.name}!</p>
+                <p><strong>Order Number:</strong> ${createdOrder.orderNumber}</p>
+                <p><strong>Status:</strong> ${createdOrder.status}</p>
+                <p><strong>Total:</strong> $${createdOrder.totalPrice}</p>
+                <h3>Order Items:</h3>
+                <ul>
+                    ${createdOrder.orderItems.map(item => `<li>${item.name} x ${item.quantity} ($${item.price})</li>`).join('')}
+                </ul>
+                <p><strong>Shipping Address:</strong> ${createdOrder.shippingAddress.address}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.postalCode}, ${createdOrder.shippingAddress.country}</p>
+            `;
+            // Email to customer
+            await sendOrderNotification({
+                to: user.email,
+                subject: `Your Order Confirmation - ${createdOrder.orderNumber}`,
+                html: orderDetailsHtml
+            });
+            // Email to admin
+            if (adminEmail) {
+                await sendOrderNotification({
+                    to: adminEmail,
+                    subject: `New Order Placed - ${createdOrder.orderNumber}`,
+                    html: `<p>New order placed by ${user.name} (${user.email})</p>` + orderDetailsHtml
+                });
+            }
+        } catch (emailErr) {
+            console.error('Order email notification failed:', emailErr);
+        }
+        // --- END EMAIL NOTIFICATIONS ---
+
         res.status(201).json({ message: 'Order placed successfully', order: createdOrder });
 
     } catch (error) {
@@ -261,6 +318,37 @@ exports.updateOrderToDelivered = async (req, res) => {
         order.status = 'Delivered'; // Update status
 
         const updatedOrder = await order.save();
+        
+        // --- EMAIL NOTIFICATIONS ---
+        try {
+            const user = await User.findById(order.userId);
+            const adminEmail = process.env.ADMIN_EMAIL;
+            const orderDetailsHtml = `
+                <h2>Order Delivered - ${order.orderNumber}</h2>
+                <p>Order for ${user.name} (${user.email}) has been marked as <strong>Delivered</strong>.</p>
+                <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+                <p><strong>Status:</strong> Delivered</p>
+                <p><strong>Total:</strong> $${order.totalPrice}</p>
+            `;
+            // Email to customer
+            await sendOrderNotification({
+                to: user.email,
+                subject: `Your Order Has Been Delivered - ${order.orderNumber}`,
+                html: orderDetailsHtml
+            });
+            // Email to admin
+            if (adminEmail) {
+                await sendOrderNotification({
+                    to: adminEmail,
+                    subject: `Order Delivered - ${order.orderNumber}`,
+                    html: orderDetailsHtml
+                });
+            }
+        } catch (emailErr) {
+            console.error('Order delivered email notification failed:', emailErr);
+        }
+        // --- END EMAIL NOTIFICATIONS ---
+
         res.status(200).json({ message: 'Order delivered successfully!', order: updatedOrder });
     } catch (error) {
         console.error('Error updating order to delivered:', error);
@@ -292,6 +380,37 @@ exports.updateOrderStatus = async (req, res) => {
         }
 
         const updatedOrder = await order.save();
+        
+        // --- EMAIL NOTIFICATIONS ---
+        try {
+            const user = await User.findById(order.userId);
+            const adminEmail = process.env.ADMIN_EMAIL;
+            const orderDetailsHtml = `
+                <h2>Order Status Updated - ${order.orderNumber}</h2>
+                <p>Order for ${user.name} (${user.email}) status updated to <strong>${order.status}</strong>.</p>
+                <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+                <p><strong>Status:</strong> ${order.status}</p>
+                <p><strong>Total:</strong> $${order.totalPrice}</p>
+            `;
+            // Email to customer
+            await sendOrderNotification({
+                to: user.email,
+                subject: `Order Status Updated - ${order.orderNumber}`,
+                html: orderDetailsHtml
+            });
+            // Email to admin
+            if (adminEmail) {
+                await sendOrderNotification({
+                    to: adminEmail,
+                    subject: `Order Status Updated - ${order.orderNumber}`,
+                    html: orderDetailsHtml
+                });
+            }
+        } catch (emailErr) {
+            console.error('Order status update email notification failed:', emailErr);
+        }
+        // --- END EMAIL NOTIFICATIONS ---
+
         res.status(200).json({ message: `Order status updated to ${status}!`, order: updatedOrder });
     } catch (error) {
         console.error('Error updating order status:', error);

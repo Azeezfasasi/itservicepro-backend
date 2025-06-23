@@ -25,6 +25,33 @@ exports.register = async (req, res) => {
     }
     const user = await User.create({ name, email, password, role });
     const token = generateToken(user);
+
+    // --- EMAIL NOTIFICATIONS ---
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS
+      }
+    });
+    // Send welcome email to user
+    await transporter.sendMail({
+      to: user.email,
+      from: process.env.GMAIL_USER,
+      subject: 'Welcome to IT ServicePro',
+      html: `<p>Hi ${user.name},</p><p>Welcome to IT ServicePro! Your account has been created successfully.</p>`
+    });
+    // Send notification email to admin
+    if (process.env.ADMIN_EMAIL) {
+      await transporter.sendMail({
+        to: process.env.ADMIN_EMAIL,
+        from: process.env.GMAIL_USER,
+        subject: 'New User Registration',
+        html: `<p>A new user has registered:</p><ul><li>Name: ${user.name}</li><li>Email: ${user.email}</li><li>Role: ${user.role || 'customer'}</li></ul>`
+      });
+    }
+    // --- END EMAIL NOTIFICATIONS ---
+
     res.status(201).json({ user: { id: user._id, name: user.name, email: user.email, role: user.role }, token });
   } catch (err) {
     res.status(500).json({ error: 'Registration failed.', details: err.message });
