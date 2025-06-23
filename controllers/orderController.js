@@ -217,17 +217,23 @@ exports.createOrder = async (req, res) => {
                 <p>Thank you for your order, ${user.name}!</p>
                 <p><strong>Order Number:</strong> ${createdOrder.orderNumber}</p>
                 <p><strong>Status:</strong> ${createdOrder.status}</p>
-                <p><strong>Total:</strong> $${createdOrder.totalPrice}</p>
+                <p><strong>Total:</strong> ₦${createdOrder.totalPrice}</p>
                 <h3>Order Items:</h3>
                 <ul>
-                    ${createdOrder.orderItems.map(item => `<li>${item.name} x ${item.quantity} ($${item.price})</li>`).join('')}
+                    ${createdOrder.orderItems.map(item => `<li>${item.name} x ${item.quantity} (₦${item.price})</li>`).join('')}
                 </ul>
                 <p><strong>Shipping Address:</strong> ${createdOrder.shippingAddress.address}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.postalCode}, ${createdOrder.shippingAddress.country}</p>
+                <p><strong>Payment Method:</strong> ${createdOrder.paymentMethod}</p>
+                <p><strong>Payment Status:</strong> ${createdOrder.isPaid ? 'Paid' : 'Not Paid'}</p>
+                <p>We will notify you once your order is shipped.</p>
+                <p>Thank you for shopping with us!</p>
+                <p>Best regards,</p>
+                <p>IT Service Pro Team - www.itservicepro.netlify.app</p>
             `;
             // Email to customer
             await sendOrderNotification({
                 to: user.email,
-                subject: `Your Order Confirmation - ${createdOrder.orderNumber}`,
+                subject: `Your Order Confirmation on IT Service Pro - ${createdOrder.orderNumber}`,
                 html: orderDetailsHtml
             });
             // Email to all admins (as to/cc)
@@ -337,7 +343,7 @@ exports.updateOrderToDelivered = async (req, res) => {
                 <p>Order for ${user.name} (${user.email}) has been marked as <strong>Delivered</strong>.</p>
                 <p><strong>Order Number:</strong> ${order.orderNumber}</p>
                 <p><strong>Status:</strong> Delivered</p>
-                <p><strong>Total:</strong> $${order.totalPrice}</p>
+                <p><strong>Total:</strong> ₦${order.totalPrice}</p>
             `;
             // Email to customer
             await sendOrderNotification({
@@ -400,7 +406,7 @@ exports.updateOrderStatus = async (req, res) => {
                 <p>Order for ${user.name} (${user.email}) status updated to <strong>${order.status}</strong>.</p>
                 <p><strong>Order Number:</strong> ${order.orderNumber}</p>
                 <p><strong>Status:</strong> ${order.status}</p>
-                <p><strong>Total:</strong> $${order.totalPrice}</p>
+                <p><strong>Total:</strong> ₦${order.totalPrice}</p>
             `;
             // Email to customer
             await sendOrderNotification({
