@@ -166,7 +166,7 @@ exports.createCategory = async (req, res) => {
       imagePublicId = result.public_id;
 
       // Delete the temporary file from the local server
-      await fs.unlink(req.file.path);
+      await fsp.unlink(req.file.path);
     }
 
     // Generate slug
@@ -240,7 +240,7 @@ exports.updateCategory = async (req, res) => {
       });
       category.image = result.secure_url;
       category.imagePublicId = result.public_id;
-      await fs.unlink(req.file.path); // Delete temp local file
+      await fsp.unlink(req.file.path); // Delete temp local file
 
     } else if (clearImage === 'true' && category.image) {
       // Frontend explicitly sent 'clearImage' flag, and there's an existing image
