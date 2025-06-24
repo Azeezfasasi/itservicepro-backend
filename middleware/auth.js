@@ -17,7 +17,9 @@ const auth = async (req, res, next) => {
       console.error('Auth middleware: User not found for decoded ID:', decoded.id || decoded._id);
       return res.status(401).json({ error: 'Not authorized, user not found.' });
     }
-    console.log(`Auth middleware: User ID ${req.user._id} attached to req.user.`);
+    // Attach isAdmin for downstream checks
+    req.user.isAdmin = req.user.role === 'admin' || req.user.role === 'super admin';
+    console.log(`Auth middleware: User ID ${req.user._id} attached to req.user. isAdmin: ${req.user.isAdmin}`);
     // req.user = decoded;
     next();
   } catch (err) {
