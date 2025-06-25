@@ -10,6 +10,12 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Helper to get admin emails from .env (comma-separated)
+function getAdminEmails() {
+  const emails = process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || '';
+  return emails.split(',').map(e => e.trim()).filter(Boolean);
+}
+
 exports.sendQuoteRequest = async (req, res) => {
   const { name, email, service, message } = req.body;
   if (!name || !email || !service || !message) {
@@ -21,15 +27,16 @@ exports.sendQuoteRequest = async (req, res) => {
     const quote = new QuoteRequest({ name, email, service, message });
     await quote.save();
 
-    // Send email
+    // Send email to admins
+    const adminEmails = getAdminEmails();
     const mailOptions = {
       from: `"${quote.name}" <${quote.email}>`,
-      to: process.env.RECEIVER_EMAIL,
+      to: adminEmails[0] || process.env.RECEIVER_EMAIL, // fallback to RECEIVER_EMAIL if no admins
+      cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
       subject: `Quote Request from ${quote.name}`,
       text: `Service: ${quote.service}\nMessage: ${quote.message}\nFrom: ${quote.name} <${quote.email}>`,
       html: `<h2>New Quote Request</h2><p><strong>Service:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email})</p>`
     };
-
     await transporter.sendMail(mailOptions);
 
     res.status(200).json({ message: 'Quote request sent and saved successfully!' });
@@ -70,6 +77,17 @@ exports.updateQuoteRequest = async (req, res) => {
       req.body,
       { new: true }
     );
+    // Send email to customer if status or details updated
+    if (updated && updated.email) {
+      const statusText = req.body.status ? `<p><strong>Status:</strong> ${req.body.status}</p>` : '';
+      const detailsText = Object.keys(req.body).filter(k => k !== 'status').map(k => `<p><strong>${k}:</strong> ${req.body[k]}</p>`).join('');
+      await transporter.sendMail({
+        to: updated.email,
+        from: process.env.GMAIL_USER,
+        subject: 'Your Quote Request Has Been Updated',
+        html: `<h2>Your Quote Request Update</h2>${statusText}${detailsText}<p>If you have questions, reply to this email.</p>`
+      });
+    }
     res.status(200).json(updated);
   } catch (err) {
     console.error('Error updating quotes:', err);
