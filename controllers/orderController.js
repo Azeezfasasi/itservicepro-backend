@@ -213,19 +213,25 @@ exports.createOrder = async (req, res) => {
             const user = await User.findById(req.user._id);
             const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
-                <h2>Order Confirmation - ${createdOrder.orderNumber}</h2>
-                <p>Thank you for your order, ${user.name}!</p>
+                <h2>Hi ${user.name}</h2>
+                <p>Thank you for placing your order with IT Service Pro with order number: ${createdOrder.orderNumber}</p>
+                <p>We have received your request and are currently processing it.</p>
+                <br />
+                <h3>Order Summary</h3>
                 <p><strong>Order Number:</strong> ${createdOrder.orderNumber}</p>
                 <p><strong>Status:</strong> ${createdOrder.status}</p>
-                <p><strong>Total:</strong> ₦${createdOrder.totalPrice}</p>
-                <h3>Order Items:</h3>
+                <p><strong>Total Amount:</strong> ₦${createdOrder.totalPrice}</p>
+                <p><strong>Payment Method:</strong> ₦${createdOrder.paymentMethod}</p>
+                <p><strong>Payment Status:</strong> ${createdOrder.isPaid ? 'Paid' : 'Not Paid'}</p>
+                <br />
+                <h3>Items Ordered</h3>
                 <ul>
                     ${createdOrder.orderItems.map(item => `<li>${item.name} x ${item.quantity} (₦${item.price})</li>`).join('')}
                 </ul>
-                <p><strong>Shipping Address:</strong> ${createdOrder.shippingAddress.address1}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.zipCode}, ${createdOrder.shippingAddress.country}</p>
-                <p><strong>Payment Method:</strong> ${createdOrder.paymentMethod}</p>
-                <p><strong>Payment Status:</strong> ${createdOrder.isPaid ? 'Paid' : 'Not Paid'}</p>
-                <p>We will notify you once your order is shipped.</p>
+                <br />
+                <h3>Shipping Details</h3>
+                <p>${createdOrder.shippingAddress.address1}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.zipCode}, ${createdOrder.shippingAddress.country}</p>
+                <p>We will notify you once your order is shipped. For mean time, you can track your order status on <a href="https://itservicepro.netlify.app/app/trackorder">our website</a>.</p>
                 <p>Thank you for shopping with us!</p>
                 <p>Best regards,</p>
                 <p>IT Service Pro Team - <a href="https://itservicepro.netlify.app">Visit our website for more details.</a></p>
@@ -233,7 +239,7 @@ exports.createOrder = async (req, res) => {
             // Email to customer
             await sendOrderNotification({
                 to: user.email,
-                subject: `Your Order Confirmation on IT Service Pro - ${createdOrder.orderNumber}`,
+                subject: `Your Order Confirmation - ${createdOrder.orderNumber} | IT Service Pro`,
                 html: orderDetailsHtml
             });
             // Email to all admins (as to/cc)
@@ -402,16 +408,26 @@ exports.updateOrderStatus = async (req, res) => {
             const user = await User.findById(order.userId);
             const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
-                <h2>Order Status Updated - ${order.orderNumber}</h2>
-                <p>Order for ${user.name} (${user.email}) status updated to <strong>${order.status}</strong>.</p>
+                <h3>Hi ${user.name}</h3>
+                <p>We are happy to let you know that the status of your order ${order.orderNumber} has been updated.
+                <br />
+                <h2>Order Details</h2>
+                <p><strong>Customer:</strong> ${user.name}</p>
                 <p><strong>Order Number:</strong> ${order.orderNumber}</p>
-                <p><strong>Status:</strong> ${order.status}</p>
-                <p><strong>Total:</strong> ₦${order.totalPrice}</p>
+                <p><strong>Current Status:</strong> ${order.status}</p>
+                <p><strong>Order Total:</strong> ₦${order.totalPrice}</p>
+                <p>Our team is now preparing your items for shipment. Once your order is dispatched, we will send you another update with tracking details.</p>
+                <p>If you have any questions or need assistance, feel free to reach out to us.</p>
+                <br />
+                <p><strong>Thank you for shopping with IT Service Pro.</strong></p>
+                <p>We appreciate your trust and look forward to serving you again.</p>
+                <p>Warm regards,</p>
+                <p>IT Service Pro Team - <a href="https://itservicepro.netlify.app/app/trackorder">Track your order status here.</a></p>
             `;
             // Email to customer
             await sendOrderNotification({
                 to: user.email,
-                subject: `Order Status Updated - ${order.orderNumber}`,
+                subject: `Order Status Updated - ${order.orderNumber} | ${order.status}`,
                 html: orderDetailsHtml
             });
             // Email to all admins (as to/cc)
@@ -419,7 +435,7 @@ exports.updateOrderStatus = async (req, res) => {
                 await sendOrderNotification({
                     to: adminEmails[0],
                     cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
-                    subject: `Order Status Updated - ${order.orderNumber}`,
+                    subject: `Order Status Updated - ${order.orderNumber} | ${order.status}`,
                     html: orderDetailsHtml
                 });
             }
