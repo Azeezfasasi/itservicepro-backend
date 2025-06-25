@@ -29,6 +29,13 @@ exports.subscribe = async (req, res) => {
     } else {
       subscriber = await NewsletterSubscriber.create({ email, name });
     }
+    // Send confirmation email to subscriber
+    await transporter.sendMail({
+      to: email,
+      from: process.env.GMAIL_USER,
+      subject: 'Newsletter Subscription Confirmed',
+      html: `<h2>Thank you for subscribing!</h2><p>Hi${name ? ' ' + name : ''},</p><p>You have successfully subscribed to our newsletter. You will now receive the latest updates and offers from us.</p><p>If you did not subscribe, you can ignore this email or <a href="#">unsubscribe here</a>.</p><p>Best regards,<br/>IT Service Pro Team</p>`
+    });
     res.status(201).json({ message: 'Subscribed successfully!' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to subscribe.', details: err.message });
