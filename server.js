@@ -10,6 +10,7 @@ const blogRoutes = require('./routes/blogRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const newsletterRoutes = require('./routes/newsletterRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -47,9 +48,7 @@ app.use('/api', quoteRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/blog', blogRoutes);
-
-
-
+app.use('/api/newsletter', newsletterRoutes);
 
 app.get('/', (req, res) => {
   res.send('IT Service Pro Backend Running');
