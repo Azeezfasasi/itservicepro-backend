@@ -33,11 +33,19 @@ exports.sendQuoteRequest = async (req, res) => {
       from: `"${quote.name}" <${quote.email}>`,
       to: adminEmails[0] || process.env.RECEIVER_EMAIL, // fallback to RECEIVER_EMAIL if no admins
       cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
-      subject: `Quote Request from ${quote.name}`,
+      subject: `Quote Request from ${quote.name} on IT Service Pro`,
       text: `Service: ${quote.service}\nMessage: ${quote.message}\nFrom: ${quote.name} <${quote.email}>`,
-      html: `<h2>New Quote Request</h2><p><strong>Service:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email})</p>`
+      html: `<p><strong>Hello Admin,<.strong></p><p>A new quote request has just been submitted through the IT Service Pro website. Please review the details below:</p><p><strong>Service Requested:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email})</p><br /><p>Please log in to your admin dashboard to follow up or assign this request to a team member.</p>`
     };
     await transporter.sendMail(mailOptions);
+
+    // Send confirmation email to customer
+    await transporter.sendMail({
+      to: quote.email,
+      from: process.env.GMAIL_USER,
+      subject: 'We Received Your Quote Request on IT Service Pro',
+      html: `<h2>Thank you for submitting a quote request through the IT Service Pro website!</h2><p>Dear ${quote.name},</p><p>We have received your request for <strong>${quote.service}</strong> and we are currently reviewing the details of your request to ensure we provide the most accurate and tailored response.</p><p>One of our IT experts will contact you shortly to discuss your requirements and the best solutions available. We appreciate your interest and trust in IT Service Pro.</p><p>If you have any additional information you'd like to share in the meantime, please feel free to reply to this email.</p><p><strong>Your message:</strong> ${quote.message}</p><p>Kind regards,<br/><strong>IT Service Pro Team</strong></p,<br/><br/><p><em>If you did not request a quote, please ignore this email.</em></p>`
+    });
 
     res.status(200).json({ message: 'Quote request sent and saved successfully!' });
   } catch (err) {
