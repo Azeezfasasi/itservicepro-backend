@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const newsletterSubscriberSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -9,6 +10,7 @@ const newsletterSubscriberSchema = new mongoose.Schema({
   lastNewsletterSentAt: { type: Date },
   tags: [{ type: String }], // For segmentation
   notes: { type: String },
+  unsubscribeToken: { type: String }, // For secure unsubscribe link
 });
 
 module.exports = mongoose.model('NewsletterSubscriber', newsletterSubscriberSchema);

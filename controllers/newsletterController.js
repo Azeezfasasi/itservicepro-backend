@@ -2,6 +2,7 @@ const NewsletterSubscriber = require('../models/NewsletterSubscriber');
 const Newsletter = require('../models/Newsletter');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
@@ -18,6 +19,7 @@ exports.subscribe = async (req, res) => {
   if (!email) return res.status(400).json({ error: 'Email is required.' });
   try {
     let subscriber = await NewsletterSubscriber.findOne({ email });
+    let unsubscribeToken;
     if (subscriber && subscriber.isActive) {
       return res.status(200).json({ message: 'Already subscribed.' });
     }
@@ -25,16 +27,40 @@ exports.subscribe = async (req, res) => {
       subscriber.isActive = true;
       subscriber.unsubscribedAt = undefined;
       subscriber.name = name || subscriber.name;
+      // Generate new token if missing
+      if (!subscriber.unsubscribeToken) {
+        unsubscribeToken = crypto.randomBytes(24).toString('hex');
+        subscriber.unsubscribeToken = unsubscribeToken;
+      } else {
+        unsubscribeToken = subscriber.unsubscribeToken;
+      }
       await subscriber.save();
     } else {
-      subscriber = await NewsletterSubscriber.create({ email, name });
+      unsubscribeToken = crypto.randomBytes(24).toString('hex');
+      subscriber = await NewsletterSubscriber.create({ email, name, unsubscribeToken });
     }
     // Send confirmation email to subscriber
+    const unsubscribeUrl = `${process.env.FRONTEND_URL || 'https://itservicepro.netlify.app'}/api/newsletter/unsubscribe/${unsubscribeToken}`;
     await transporter.sendMail({
       to: email,
       from: process.env.GMAIL_USER,
       subject: 'Newsletter Subscription Confirmed',
-      html: `<h2>Thank you for subscribing!</h2><p>Hi${name ? ' ' + name : ''},</p><p>You have successfully subscribed to our newsletter. You will now receive the latest updates and offers from us.</p><p>If you did not subscribe, you can ignore this email or <a href="#">unsubscribe here</a>.</p><p>Best regards,<br/>IT Service Pro Team</p>`
+      html: `
+        <div style="max-width:520px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:sans-serif;">
+          <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+            <img src="https://itservicepro.netlify.app/itfavicon.png" alt="IT Service Pro Logo" style="height:60px;margin-bottom:8px;" />
+            <h1 style="color:#fff;margin:0;font-size:2rem;">Welcome to IT Service Pro!</h1>
+          </div>
+          <div style="padding:32px 24px 24px 24px;">
+            <p style="font-size:1.1rem;color:#222;">Hi${name ? ' ' + name : ''},</p>
+            <p style="font-size:1.1rem;color:#222;">Thank you for subscribing to our newsletter! 🎉</p>
+            <p style="color:#222;">You will now receive the latest updates, offers, and expert tips from our team.</p>
+            <a href="https://itservicepro.netlify.app" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Visit Our Website</a>
+            <p style="font-size:0.95rem;color:#555;margin-top:24px;">If you did not subscribe, you can ignore this email or <a href="${unsubscribeUrl}" style="color:#00B9F1;">unsubscribe here</a>.</p>
+            <p style="margin-top:32px;color:#888;font-size:0.95rem;">Best regards,<br/>IT Service Pro Team</p>
+          </div>
+        </div>
+      `
     });
     res.status(201).json({ message: 'Subscribed successfully!' });
   } catch (err) {
@@ -57,6 +83,26 @@ exports.unsubscribe = async (req, res) => {
     res.status(200).json({ message: 'Unsubscribed successfully.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to unsubscribe.', details: err.message });
+  }
+};
+
+// Unsubscribe by token (GET)
+exports.unsubscribeByToken = async (req, res) => {
+  const { token } = req.params;
+  if (!token) return res.status(400).send('Invalid unsubscribe link.');
+  try {
+    const subscriber = await NewsletterSubscriber.findOne({ unsubscribeToken: token, isActive: true });
+    if (!subscriber) {
+      return res.status(404).send('Subscriber not found or already unsubscribed.');
+    }
+    subscriber.isActive = false;
+    subscriber.unsubscribedAt = new Date();
+    // Optionally clear token to prevent reuse
+    // subscriber.unsubscribeToken = undefined;
+    await subscriber.save();
+    res.send('<div style="max-width:420px;margin:40px auto;padding:32px 24px;border-radius:8px;border:1px solid #e0e0e0;font-family:sans-serif;text-align:center;"><h2 style="color:#00B9F1;">You have been unsubscribed.</h2><p style="color:#444;">You will no longer receive our newsletters.</p><a href="https://itservicepro.netlify.app" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Return to Website</a></div>');
+  } catch (err) {
+    res.status(500).send('Failed to unsubscribe.');
   }
 };
 

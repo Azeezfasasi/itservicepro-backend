@@ -9,6 +9,9 @@ router.post('/subscribe', newsletterController.subscribe);
 // Public: Unsubscribe POST - /api/newsletter/unsubscribe
 router.post('/unsubscribe', newsletterController.unsubscribe);
 
+// Public: Unsubscribe via token GET - /api/newsletter/unsubscribe/:token
+router.get('/unsubscribe/:token', newsletterController.unsubscribeByToken);
+
 // Admin: Subscribers GET - /api/newsletter/subscribers
 router.get('/subscribers', auth, authorizeRoles, newsletterController.getAllSubscribers);
 
