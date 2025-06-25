@@ -35,7 +35,7 @@ exports.sendQuoteRequest = async (req, res) => {
       cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
       subject: `Quote Request from ${quote.name} on IT Service Pro`,
       text: `Service: ${quote.service}\nMessage: ${quote.message}\nFrom: ${quote.name} <${quote.email}>`,
-      html: `<p><strong>Hello Admin,</strong></p><p>A new quote request has just been submitted through the IT Service Pro website. Please review the details below:</p><p><strong>Service Requested:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email})</p><br /><p>Please log in to your admin dashboard to follow up or assign this request to a team member.</p>`
+      html: `<p><strong>Hello Admin,</strong></p><p>A new quote request has just been submitted through the IT Service Pro website. Please review the details below:</p><p><strong>Service Requested:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email})</p><br /><p>Please <a href="https://itservicepro.netlify.app/login">log in</a> to your admin dashboard to follow up or assign this request to a team member.</p>`
     };
     await transporter.sendMail(mailOptions);
 
