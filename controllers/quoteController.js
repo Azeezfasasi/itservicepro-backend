@@ -113,7 +113,8 @@ exports.replyToQuoteRequest = async (req, res) => {
   }
 
   try {
-    const quote = await QuoteRequest.findById(id);
+    // const quote = await QuoteRequest.findById(id);
+    const quote = await QuoteRequest.findById(req.params.id).populate('replies.adminId', 'name').exec();
     if (!quote) {
       return res.status(404).json({ error: 'Quote request not found.' });
     }
