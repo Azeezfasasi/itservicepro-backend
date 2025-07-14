@@ -12,11 +12,15 @@ const quoteRequestSchema = new mongoose.Schema({
   default: 'Pending'
   },
    // You could add a field to store replies, e.g.:
-  replies: [{
-    adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    message: { type: String, required: true },
-    repliedAt: { type: Date, default: Date.now }
-  }],
+  // replies: [{
+  //   adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  //   message: { type: String, required: true },
+  //   repliedAt: { type: Date, default: Date.now }
+  // }],
+  replies: [
+    { message: "Reply 1 message", createdAt: "2023-01-01T10:00:00Z", author: "Admin"},
+    { message: "Reply 2 message", createdAt: "2023-01-01T11:00:00Z", author: "Admin" },
+  ],
   createdAt: { type: Date, default: Date.now }
 });
 
