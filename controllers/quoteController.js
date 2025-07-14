@@ -102,3 +102,43 @@ exports.updateQuoteRequest = async (req, res) => {
     res.status(500).json({ error: 'Failed to update quote request.' });
   }
 };
+
+// function to reply to a quote request
+exports.replyToQuoteRequest = async (req, res) => {
+  const { id } = req.params;
+  const { replyMessage } = req.body;
+
+  if (!replyMessage) {
+    return res.status(400).json({ error: 'Reply message is required.' });
+  }
+
+  try {
+    const quote = await QuoteRequest.findById(id);
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote request not found.' });
+    }
+
+    // Send email to the quote requestor
+    await transporter.sendMail({
+      to: quote.email,
+      from: process.env.GMAIL_USER,
+      subject: `Reply to your Quote Request for ${quote.service} from IT Service Pro`,
+      html: `<h2>Regarding your Quote Request for ${quote.service}</h2>
+             <p>Dear ${quote.name},</p>
+             <p>Thank you for your interest in IT Service Pro. We are replying to your quote request with the following message:</p>
+             <div style="background-color: #f0f4f8; padding: 15px; border-radius: 8px; margin-top: 20px; margin-bottom: 20px;">
+               <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
+             </div>
+             <p>If you have any further questions or require additional information, please do not hesitate to respond to this email.</p>
+             <p>Kind regards,<br/><strong>IT Service Pro Team</strong></p>`
+    });
+
+    // Optionally, you might want to save the reply in the quote request document
+    // For example, by adding a 'replies' array to your QuoteRequest model.
+    // For now, we'll just send the email and indicate success.
+    res.status(200).json({ message: 'Reply sent successfully to the customer!' });
+  } catch (err) {
+    console.error('Error replying to quote:', err);
+    res.status(500).json({ error: 'Failed to send reply.', details: err.message });
+  }
+};

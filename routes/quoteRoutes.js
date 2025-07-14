@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { sendQuoteRequest, getAllQuoteRequests, deleteQuoteRequest, updateQuoteRequest } = require('../controllers/quoteController');
+const { sendQuoteRequest, getAllQuoteRequests, deleteQuoteRequest, updateQuoteRequest, replyToQuoteRequest } = require('../controllers/quoteController');
 const { auth, authorizeRoles } = require('../middleware/auth');
 
 // POST /api/quote
@@ -14,5 +14,8 @@ router.delete('/quotes/:id', auth, authorizeRoles, deleteQuoteRequest);
 
 // PUT /api/quote/:id
 router.put('/quotes/:id', auth, authorizeRoles, updateQuoteRequest);
+
+// POST /api/quotes/:id/reply - route for replying to a quote request
+router.post('/quotes/:id/reply', auth, authorizeRoles, replyToQuoteRequest);
 
 module.exports = router;

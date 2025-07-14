@@ -11,6 +11,12 @@ const quoteRequestSchema = new mongoose.Schema({
   enum: ['Pending', 'In Review', 'Done', 'Completed', 'Rejected'],
   default: 'Pending'
   },
+   // You could add a field to store replies, e.g.:
+  replies: [{
+    adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    message: { type: String, required: true },
+    repliedAt: { type: Date, default: Date.now }
+  }],
   createdAt: { type: Date, default: Date.now }
 });
 
