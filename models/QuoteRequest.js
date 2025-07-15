@@ -20,7 +20,7 @@ const quoteRequestSchema = new mongoose.Schema({
   message: { type: String, required: true },
   status: {
   type: String,
-  enum: ['Waiting for Support', 'Pending', 'In Review', 'Done', 'Completed', 'Declined', 'Rejected', 'Resolved', 'Closed'],
+  enum: ['Waiting for Support', 'Waiting for Customer', 'Pending', 'In Review', 'In Progress', 'Done', 'Completed', 'Declined', 'Rejected', 'Resolved', 'Closed'],
   default: 'Waiting for Support'
   },
   replies: [replySchema],
