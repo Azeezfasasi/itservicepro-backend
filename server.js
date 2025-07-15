@@ -52,7 +52,7 @@ app.use('/api/blog', blogRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 
 app.get('/', (req, res) => {
-  res.send('IT Service Pro Backend Running');
+  res.send('Marshall Global Ventures Backend Running');
 });
 
 app.listen(PORT, () => {

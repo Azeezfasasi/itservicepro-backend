@@ -1,4 +1,4 @@
-# IT Service Pro Quote Request Backend
+# Marshall Global Ventures Quote Request Backend
 
 ## Setup
 

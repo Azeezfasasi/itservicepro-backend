@@ -48,8 +48,8 @@ exports.subscribe = async (req, res) => {
       html: `
         <div style="max-width:520px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:sans-serif;">
           <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-            <img src="https://itservicepro.netlify.app/itfavicon.png" alt="IT Service Pro Logo" style="height:60px;margin-bottom:8px;" />
-            <h1 style="color:#fff;margin:0;font-size:2rem;">Welcome to IT Service Pro!</h1>
+            <img src="https://itservicepro.netlify.app/itfavicon.png" alt="IMarshall Global Ventures" style="height:60px;margin-bottom:8px;" />
+            <h1 style="color:#fff;margin:0;font-size:2rem;">Welcome to Marshall Global Ventures!</h1>
           </div>
           <div style="padding:32px 24px 24px 24px;">
             <p style="font-size:1.1rem;color:#222;">Hi${name ? ' ' + name : ''},</p>
@@ -57,7 +57,7 @@ exports.subscribe = async (req, res) => {
             <p style="color:#222;">You will now receive the latest updates, offers, and expert tips from our team.</p>
             <a href="https://itservicepro.netlify.app" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Visit Our Website</a>
             <p style="font-size:0.95rem;color:#555;margin-top:24px;">If you did not subscribe, you can ignore this email or <a href="${unsubscribeUrl}" style="color:#00B9F1;">unsubscribe here</a>.</p>
-            <p style="margin-top:32px;color:#888;font-size:0.95rem;">Best regards,<br/>IT Service Pro Team</p>
+            <p style="margin-top:32px;color:#888;font-size:0.95rem;">Best regards,<br/>Marshall Global Ventures Team</p>
           </div>
         </div>
       `

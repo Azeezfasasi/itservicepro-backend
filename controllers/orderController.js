@@ -214,7 +214,7 @@ exports.createOrder = async (req, res) => {
             const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
                 <h2>Hi ${user.name}</h2>
-                <p>Thank you for placing your order with IT Service Pro with order number: ${createdOrder.orderNumber}</p>
+                <p>Thank you for placing your order with Marshall Global Ventures with order number: ${createdOrder.orderNumber}</p>
                 <p>We have received your request and are currently processing it.</p>
                 <br />
                 <h3>Order Summary</h3>
@@ -234,12 +234,12 @@ exports.createOrder = async (req, res) => {
                 <p>We will notify you once your order is shipped. For mean time, you can track your order status on <a href="https://itservicepro.netlify.app/app/trackorder">our website</a>.</p>
                 <p>Thank you for shopping with us!</p>
                 <p>Best regards,</p>
-                <p>IT Service Pro Team - <a href="https://itservicepro.netlify.app">Visit our website for more details.</a></p>
+                <p>Marshall Global Ventures Team - <a href="https://itservicepro.netlify.app">Visit our website for more details.</a></p>
             `;
             // Email to customer
             await sendOrderNotification({
                 to: user.email,
-                subject: `Your Order Confirmation - ${createdOrder.orderNumber} | IT Service Pro`,
+                subject: `Your Order Confirmation - ${createdOrder.orderNumber} | Marshall Global Ventures`,
                 html: orderDetailsHtml
             });
             // Email to all admins (as to/cc)
@@ -419,10 +419,10 @@ exports.updateOrderStatus = async (req, res) => {
                 <p>Our team is now preparing your items for shipment. Once your order is dispatched, we will send you another update with tracking details.</p>
                 <p>If you have any questions or need assistance, feel free to reach out to us.</p>
                 <br />
-                <p><strong>Thank you for shopping with IT Service Pro.</strong></p>
+                <p><strong>Thank you for shopping with Marshall Global Ventures.</strong></p>
                 <p>We appreciate your trust and look forward to serving you again.</p>
                 <p>Warm regards,</p>
-                <p>IT Service Pro Team - <a href="https://itservicepro.netlify.app/app/trackorder">Track your order status here.</a></p>
+                <p>Marshall Global Ventures Team - <a href="https://itservicepro.netlify.app/app/trackorder">Track your order status here.</a></p>
             `;
             // Email to customer
             await sendOrderNotification({

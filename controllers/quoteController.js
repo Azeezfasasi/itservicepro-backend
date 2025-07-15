@@ -35,8 +35,8 @@ exports.sendQuoteRequest = async (req, res) => {
       from: `"${quote.name}" <${quote.email}>`,
       to: adminEmails[0] || process.env.RECEIVER_EMAIL,
       cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
-      subject: `Quote Request from ${quote.name} on IT Service Pro`,
-      html: `<p><strong>Hello Admin,</strong></p><p>A new quote request has just been submitted through the IT Service Pro website. Please review the details below:</p><p><strong>Service Requested:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email}) (${quote.phone})</p><br /><p>Please <a href="https://itservicepro.netlify.app/login">log in</a> to your admin dashboard to follow up or assign this request to a team member.</p>`
+      subject: `Quote Request from ${quote.name} on Marshall Global Ventures`,
+      html: `<p><strong>Hello Admin,</strong></p><p>A new quote request has just been submitted through the Marshall Global Ventures website. Please review the details below:</p><p><strong>Service Requested:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email}) (${quote.phone})</p><br /><p>Please <a href="https://itservicepro.netlify.app/login">log in</a> to your admin dashboard to follow up or assign this request to a team member.</p>`
     });
 
     // Send confirmation email to customer
@@ -44,8 +44,8 @@ exports.sendQuoteRequest = async (req, res) => {
     await transporter.sendMail({
       to: quote.email,
       from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender for confirmation
-      subject: 'We Received Your Quote Request on IT Service Pro',
-      html: `<h2>Thank you for submitting a quote request through the IT Service Pro website!</h2><p>Dear ${quote.name},</p><p>We have received your request for <strong>${quote.service}</strong> and we are currently reviewing the details of your request to ensure we provide the most accurate and tailored response.</p><p>One of our IT experts will contact you shortly to discuss your requirements and the best solutions available. We appreciate your interest and trust in IT Service Pro.</p><p>If you have any additional information you'd like to share in the meantime, please feel free to reply to this email.</p><p><strong>Your message:</strong> ${quote.message}</p><p>Kind regards,<br/><strong>IT Service Pro Team</strong></p,<br/><br/><p><em>If you did not request a quote, please ignore this email.</em></p>`
+      subject: 'We Received Your Quote Request on Marshall Global Ventures',
+      html: `<h2>Thank you for submitting a quote request through the IT Marshall Global Ventures website!</h2><p>Dear ${quote.name},</p><p>We have received your request for <strong>${quote.service}</strong> and we are currently reviewing the details of your request to ensure we provide the most accurate and tailored response.</p><p>One of our IT experts will contact you shortly to discuss your requirements and the best solutions available. We appreciate your interest and trust in Marshall Global Ventures.</p><p>If you have any additional information you'd like to share in the meantime, please feel free to reply to this email.</p><p><strong>Your message:</strong> ${quote.message}</p><p>Kind regards,<br/><strong>Marshall Global Ventures Team</strong></p,<br/><br/><p><em>If you did not request a quote, please ignore this email.</em></p>`
     });
 
     res.status(200).json({ message: 'Quote request sent and saved successfully!' });
@@ -257,15 +257,15 @@ exports.adminReplyToQuoteRequest = async (req, res) => {
     await transporter.sendMail({
       to: quote.email,
       from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender
-      subject: `Reply to your Quote Request for ${quote.service} from IT Service Pro`,
+      subject: `Reply to your Quote Request for ${quote.service} from Marshall Global Ventures`,
       html: `<h2>Regarding your Quote Request for ${quote.service}</h2>
              <p>Dear ${quote.name},</p>
-             <p>Thank you for your interest in IT Service Pro. We are replying to your quote request with the following message:</p>
+             <p>Thank you for your interest in Marshall Global Ventures. We are replying to your quote request with the following message:</p>
              <div style="background-color: #f0f4f8; padding: 15px; border-radius: 8px; margin-top: 20px; margin-bottom: 20px;">
                <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
              </div>
              <p>If you have any further questions or require additional information, please do not hesitate to respond to this email.</p>
-             <p>Kind regards,<br/><strong>IT Service Pro Team</strong></p>`
+             <p>Kind regards,<br/><strong>Marshall Global Ventures Team</strong></p>`
     });
 
     res.status(200).json({
@@ -347,7 +347,7 @@ exports.customerReplyToQuote = async (req, res) => {
                <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
              </div>
              <p>Our team will review your message and get back to you shortly.</p>
-             <p>Kind regards,<br/><strong>IT Service Pro Team</strong></p>`
+             <p>Kind regards,<br/><strong>Marshall Global Ventures Team</strong></p>`
     });
 
     res.status(200).json({
