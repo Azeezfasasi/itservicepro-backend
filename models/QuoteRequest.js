@@ -1,5 +1,17 @@
 const mongoose = require('mongoose');
 
+const replySchema = new mongoose.Schema({
+  senderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // This tells Mongoose to link to your 'User' model
+    required: false // Can be false if you allow replies without a logged-in user, but generally true for admin/customer replies
+  },
+  senderEmail: { type: String, required: true }, // The email of the sender (admin or customer)
+  senderType: { type: String, enum: ['admin', 'superAdmin', 'super admin', 'customer'], required: true }, // 'admin' or 'customer'
+  message: { type: String, required: true },
+  repliedAt: { type: Date, default: Date.now }
+});
+
 const quoteRequestSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
@@ -8,15 +20,19 @@ const quoteRequestSchema = new mongoose.Schema({
   message: { type: String, required: true },
   status: {
   type: String,
-  enum: ['Pending', 'In Review', 'Done', 'Completed', 'Rejected'],
+  enum: ['Pending', 'In Review', 'Done', 'Completed', 'Declined', 'Rejected', 'Resolved', 'Closed'],
   default: 'Pending'
   },
-   // You could add a field to store replies, e.g.:
-  replies: [{
-    adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    message: { type: String, required: true },
-    repliedAt: { type: Date, default: Date.now }
-  }],
+  replies: [replySchema],
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // Reference to the User model
+    default: null // Can be null if not assigned
+  },
+  assignedAt: {
+    type: Date,
+    default: null // Will be set when assigned
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

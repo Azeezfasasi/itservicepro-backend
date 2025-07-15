@@ -1,5 +1,6 @@
-const nodemailer = require('nodemailer');
 const QuoteRequest = require('../models/QuoteRequest');
+const User = require('../models/User');
+const nodemailer = require('nodemailer'); // Re-added nodemailer import
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
@@ -29,20 +30,20 @@ exports.sendQuoteRequest = async (req, res) => {
 
     // Send email to admins
     const adminEmails = getAdminEmails();
-    const mailOptions = {
+    // CHANGED: Use transporter.sendMail directly
+    await transporter.sendMail({
       from: `"${quote.name}" <${quote.email}>`,
-      to: adminEmails[0] || process.env.RECEIVER_EMAIL, // fallback to RECEIVER_EMAIL if no admins
+      to: adminEmails[0] || process.env.RECEIVER_EMAIL,
       cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
       subject: `Quote Request from ${quote.name} on IT Service Pro`,
-      text: `Service: ${quote.service}\nMessage: ${quote.message}\nFrom: ${quote.name} <${quote.email}>`,
       html: `<p><strong>Hello Admin,</strong></p><p>A new quote request has just been submitted through the IT Service Pro website. Please review the details below:</p><p><strong>Service Requested:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email}) (${quote.phone})</p><br /><p>Please <a href="https://itservicepro.netlify.app/login">log in</a> to your admin dashboard to follow up or assign this request to a team member.</p>`
-    };
-    await transporter.sendMail(mailOptions);
+    });
 
     // Send confirmation email to customer
+    // CHANGED: Use transporter.sendMail directly
     await transporter.sendMail({
       to: quote.email,
-      from: process.env.GMAIL_USER,
+      from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender for confirmation
       subject: 'We Received Your Quote Request on IT Service Pro',
       html: `<h2>Thank you for submitting a quote request through the IT Service Pro website!</h2><p>Dear ${quote.name},</p><p>We have received your request for <strong>${quote.service}</strong> and we are currently reviewing the details of your request to ensure we provide the most accurate and tailored response.</p><p>One of our IT experts will contact you shortly to discuss your requirements and the best solutions available. We appreciate your interest and trust in IT Service Pro.</p><p>If you have any additional information you'd like to share in the meantime, please feel free to reply to this email.</p><p><strong>Your message:</strong> ${quote.message}</p><p>Kind regards,<br/><strong>IT Service Pro Team</strong></p,<br/><br/><p><em>If you did not request a quote, please ignore this email.</em></p>`
     });
@@ -58,7 +59,8 @@ exports.getAllQuoteRequests = async (req, res) => {
   console.log('getAllQuoteRequests called');
   try {
     const quotes = await QuoteRequest.find()
-      .populate('replies.adminId', 'name')
+      .populate('replies.senderId', 'name')
+      .populate('assignedTo', 'name email')
       .sort({ createdAt: -1 });
     console.log('Quotes found:', quotes.length);
     res.status(200).json(quotes);
@@ -68,7 +70,121 @@ exports.getAllQuoteRequests = async (req, res) => {
   }
 };
 
-// Delete a quote request
+exports.getSingleQuoteRequest = async (req, res) => {
+  try {
+    const quote = await QuoteRequest.findById(req.params.id)
+      .populate('replies.senderId', 'name')
+      .populate('assignedTo', 'name email')
+      .exec();
+
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote request not found.' });
+    }
+
+    if (req.user && req.user.role === 'customer' && req.user.email !== quote.email) {
+      return res.status(403).json({ error: 'Unauthorized access to this quote.' });
+    }
+    res.status(200).json(quote);
+  } catch (err) {
+    console.error('Error fetching single quote:', err);
+    res.status(500).json({ error: 'Failed to fetch quote request.' });
+  }
+};
+
+exports.assignQuoteToAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { assignedToUserId } = req.body;
+
+    if (!assignedToUserId) {
+      return res.status(400).json({ error: 'Assigned user ID is required.' });
+    }
+
+    const quote = await QuoteRequest.findById(id);
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote request not found.' });
+    }
+
+    const assignee = await User.findById(assignedToUserId);
+    if (!assignee || (assignee.role !== 'admin' && assignee.role !== 'super admin')) {
+      return res.status(400).json({ error: 'Invalid user for assignment. Must be an admin or super admin.' });
+    }
+
+    if (quote.assignedTo && quote.assignedTo.toString() === assignedToUserId) {
+      const populatedQuote = await QuoteRequest.findById(quote._id)
+        .populate('replies.senderId', 'name')
+        .populate('assignedTo', 'name email')
+        .exec();
+      return res.status(200).json({ message: 'Quote already assigned to this admin.', updatedQuote: populatedQuote });
+    }
+
+    quote.assignedTo = assignedToUserId;
+    quote.assignedAt = new Date();
+
+    const updatedQuote = await quote.save();
+
+    const populatedQuote = await QuoteRequest.findById(updatedQuote._id)
+      .populate('replies.senderId', 'name')
+      .populate('assignedTo', 'name email')
+      .exec();
+
+    const emailSubject = `New Quote Request Assigned to You: ${populatedQuote.service}`;
+    const emailHtml = `
+      <p>Dear ${populatedQuote.assignedTo.name || populatedQuote.assignedTo.email},</p>
+      <p>A new quote request has been assigned to you for review and action.</p>
+      <p><strong>Quote Details:</strong></p>
+      <ul>
+        <li><strong>Service:</strong> ${populatedQuote.service}</li>
+        <li><strong>Customer Name:</strong> ${populatedQuote.name}</li>
+        <li><strong>Customer Email:</strong> ${populatedQuote.email}</li>
+        <li><strong>Message:</strong> ${populatedQuote.message}</li>
+        <li><strong>Status:</strong> ${populatedQuote.status}</li>
+      </ul>
+      <p>Please log in to the admin panel to view the full details and respond to the customer.</p>
+      <p><a href="https://itservicepro.netlify.app/app/quote">Click here to view the quote in the admin panel</a></p>
+      <p>Thank you,</p>
+      <p>Your IT ServicePro Team</p>
+    `;
+
+    try {
+      // CHANGED: Use transporter.sendMail directly
+      await transporter.sendMail({
+        to: populatedQuote.assignedTo.email,
+        subject: emailSubject,
+        html: emailHtml,
+        from: process.env.GMAIL_USER // Ensure this is set in your .env
+      });
+      console.log(`Assignment notification email sent to ${populatedQuote.assignedTo.email}`);
+    } catch (emailError) {
+      console.error('Error sending assignment notification email:', emailError);
+    }
+
+    res.status(200).json({ message: 'Quote assigned successfully!', updatedQuote: populatedQuote });
+  } catch (err) {
+    console.error('Error assigning quote:', err);
+    res.status(500).json({ error: 'Failed to assign quote.' });
+  }
+};
+
+exports.getCustomerQuotes = async (req, res) => {
+  if (!req.user || !req.user.email) {
+    return res.status(401).json({ error: 'Unauthorized: Customer email not available.' });
+  }
+
+  try {
+    const customerEmail = req.user.email;
+    const quotes = await QuoteRequest.find({ email: customerEmail })
+      .populate('replies.senderId', 'name')
+      .populate('assignedTo', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(quotes);
+  } catch (err) {
+    console.error('Error fetching customer quotes:', err);
+    res.status(500).json({ error: 'Failed to fetch customer quote requests.' });
+  }
+};
+
 exports.deleteQuoteRequest = async (req, res) => {
   try {
     await QuoteRequest.findByIdAndDelete(req.params.id);
@@ -79,21 +195,21 @@ exports.deleteQuoteRequest = async (req, res) => {
   }
 };
 
-// Update a quote request (edit details or status)
 exports.updateQuoteRequest = async (req, res) => {
   try {
     const updated = await QuoteRequest.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
-    );
-    // Send email to customer if status or details updated
+    ).populate('assignedTo', 'name email');
+
     if (updated && updated.email) {
       const statusText = req.body.status ? `<p><strong>Status:</strong> ${req.body.status}</p>` : '';
       const detailsText = Object.keys(req.body).filter(k => k !== 'status').map(k => `<p><strong>${k}:</strong> ${req.body[k]}</p>`).join('');
+      // CHANGED: Use transporter.sendMail directly
       await transporter.sendMail({
         to: updated.email,
-        from: process.env.GMAIL_USER,
+        from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender
         subject: 'Your Quote Request Has Been Updated',
         html: `<h2>Your Quote Request Update</h2>${statusText}${detailsText}<p>If you have questions, reply to this email.</p>`
       });
@@ -105,47 +221,7 @@ exports.updateQuoteRequest = async (req, res) => {
   }
 };
 
-// function to reply to a quote request
-// exports.replyToQuoteRequest = async (req, res) => {
-//   const { id } = req.params;
-//   const { replyMessage } = req.body;
-
-//   if (!replyMessage) {
-//     return res.status(400).json({ error: 'Reply message is required.' });
-//   }
-
-//   try {
-//     // const quote = await QuoteRequest.findById(id);
-//     const quote = await QuoteRequest.findById(req.params.id).populate('replies.adminId', 'name').exec();
-//     if (!quote) {
-//       return res.status(404).json({ error: 'Quote request not found.' });
-//     }
-
-//     // Send email to the quote requestor
-//     await transporter.sendMail({
-//       to: quote.email,
-//       from: process.env.GMAIL_USER,
-//       subject: `Reply to your Quote Request for ${quote.service} from IT Service Pro`,
-//       html: `<h2>Regarding your Quote Request for ${quote.service}</h2>
-//              <p>Dear ${quote.name},</p>
-//              <p>Thank you for your interest in IT Service Pro. We are replying to your quote request with the following message:</p>
-//              <div style="background-color: #f0f4f8; padding: 15px; border-radius: 8px; margin-top: 20px; margin-bottom: 20px;">
-//                <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
-//              </div>
-//              <p>If you have any further questions or require additional information, please do not hesitate to respond to this email.</p>
-//              <p>Kind regards,<br/><strong>IT Service Pro Team</strong></p>`
-//     });
-
-//     // Optionally, you might want to save the reply in the quote request document
-//     // For example, by adding a 'replies' array to your QuoteRequest model.
-//     // For now, we'll just send the email and indicate success.
-//     res.status(200).json({ message: 'Reply sent successfully to the customer!' });
-//   } catch (err) {
-//     console.error('Error replying to quote:', err);
-//     res.status(500).json({ error: 'Failed to send reply.', details: err.message });
-//   }
-// };
-exports.replyToQuoteRequest = async (req, res) => {
+exports.adminReplyToQuoteRequest = async (req, res) => {
   const { id } = req.params;
   const { replyMessage } = req.body;
 
@@ -154,28 +230,33 @@ exports.replyToQuoteRequest = async (req, res) => {
   }
 
   try {
-    // Find the quote and push the new reply
-    const quote = await QuoteRequest.findById(id); // Fetch without populate first to modify
+    const quote = await QuoteRequest.findById(id);
     if (!quote) {
       return res.status(404).json({ error: 'Quote request not found.' });
     }
 
-    // Add the new reply to the replies array
-    // You'll need to get the admin's ID from req.user or similar from your auth middleware
-    // For demonstration, let's assume req.user.id is available after auth
-    const adminId = req.user ? req.user.id : null; // Replace with actual admin ID from auth
+    const adminEmail = req.user.email;
+    const adminId = req.user.id;
+
     const newReply = {
-      adminId: adminId, // Make sure this matches your User model's ID
+      senderId: adminId,
+      senderEmail: adminEmail,
+      senderType: 'admin',
       message: replyMessage,
-      repliedAt: new Date() // Use repliedAt as per your schema
+      repliedAt: new Date()
     };
     quote.replies.push(newReply);
-    await quote.save(); // Save the updated quote with the new reply
+    await quote.save();
 
-    // Send email to the quote requestor
+    const updatedAndPopulatedQuote = await QuoteRequest.findById(id)
+      .populate('replies.senderId', 'name')
+      .populate('assignedTo', 'name email')
+      .exec();
+
+    // CHANGED: Use transporter.sendMail directly
     await transporter.sendMail({
       to: quote.email,
-      from: process.env.GMAIL_USER,
+      from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender
       subject: `Reply to your Quote Request for ${quote.service} from IT Service Pro`,
       html: `<h2>Regarding your Quote Request for ${quote.service}</h2>
              <p>Dear ${quote.name},</p>
@@ -187,17 +268,94 @@ exports.replyToQuoteRequest = async (req, res) => {
              <p>Kind regards,<br/><strong>IT Service Pro Team</strong></p>`
     });
 
-    // Re-fetch the quote with populated replies to send back the latest state
-    const updatedQuoteWithPopulatedReplies = await QuoteRequest.findById(id)
-      .populate('replies.adminId', 'name')
+    res.status(200).json({
+      message: 'Reply sent and saved successfully!',
+      updatedQuote: updatedAndPopulatedQuote
+    });
+  } catch (err) {
+    console.error('Error replying to quote (admin):', err);
+    res.status(500).json({ error: 'Failed to send reply.', details: err.message });
+  }
+};
+
+exports.customerReplyToQuote = async (req, res) => {
+  const { id } = req.params;
+  const { replyMessage } = req.body;
+
+  if (!replyMessage) {
+    return res.status(400).json({ error: 'Reply message is required.' });
+  }
+
+  try {
+    const quote = await QuoteRequest.findById(id);
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote request not found.' });
+    }
+
+    if (!req.user || req.user.email !== quote.email) {
+      return res.status(403).json({ error: 'Unauthorized: You can only reply to your own quotes.' });
+    }
+
+    const customerEmail = req.user.email;
+    const customerId = req.user.id;
+
+    const newReply = {
+      senderId: customerId,
+      senderEmail: customerEmail,
+      senderType: 'customer',
+      message: replyMessage,
+      repliedAt: new Date()
+    };
+    quote.replies.push(newReply);
+    await quote.save();
+
+    const updatedAndPopulatedQuote = await QuoteRequest.findById(id)
+      .populate('replies.senderId', 'name')
+      .populate('assignedTo', 'name email')
       .exec();
+
+    // Send email notification to admins about the customer's reply
+    const adminEmails = getAdminEmails();
+    // CHANGED: Use transporter.sendMail directly
+    await transporter.sendMail({
+      to: adminEmails[0] || process.env.RECEIVER_EMAIL,
+      cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
+      from: `"${quote.name}" <${quote.email}>`,
+      subject: `Customer Reply to Quote Request #${id} from ${quote.name}`,
+      html: `<p><strong>Hello Admin,</strong></p>
+             <p>A customer has replied to their quote request:</p>
+             <p><strong>Quote ID:</strong> ${id}</p>
+             <p><strong>Customer:</strong> ${quote.name} (${quote.email})</p>
+             <p><strong>Service:</strong> ${quote.service}</p>
+             <p><strong>Reply Message:</strong></p>
+             <div style="background-color: #f0f4f8; padding: 15px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px;">
+               <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
+             </div>
+             <p>Please <a href="https://itservicepro.netlify.app/login">log in</a> to your admin dashboard to view the full conversation.</p>`
+    });
+
+    // Optionally send a confirmation to the customer that their reply was received
+    // CHANGED: Use transporter.sendMail directly
+    await transporter.sendMail({
+      to: customerEmail,
+      from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender
+      subject: `Your Reply to Quote Request for ${quote.service} Has Been Sent`,
+      html: `<h2>Your Reply Has Been Sent!</h2>
+             <p>Dear ${quote.name},</p>
+             <p>We have received your reply to your quote request for <strong>${quote.service}</strong>:</p>
+             <div style="background-color: #f0f4f8; padding: 15px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px;">
+               <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
+             </div>
+             <p>Our team will review your message and get back to you shortly.</p>
+             <p>Kind regards,<br/><strong>IT Service Pro Team</strong></p>`
+    });
 
     res.status(200).json({
       message: 'Reply sent and saved successfully!',
-      updatedQuote: updatedQuoteWithPopulatedReplies // Send back the updated quote
+      updatedQuote: updatedAndPopulatedQuote
     });
   } catch (err) {
-    console.error('Error replying to quote:', err);
+    console.error('Error replying to quote (customer):', err);
     res.status(500).json({ error: 'Failed to send reply.', details: err.message });
   }
 };
