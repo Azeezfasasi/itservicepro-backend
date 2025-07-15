@@ -20,6 +20,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
   origin: [
     'https://itservicepro.netlify.app',
+    'https://mgv-tech.com',
     'http://localhost:5173'
   ], // your frontend URL
   credentials: true, // if you use cookies/auth
