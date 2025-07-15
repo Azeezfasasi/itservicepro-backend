@@ -20,8 +20,8 @@ const quoteRequestSchema = new mongoose.Schema({
   message: { type: String, required: true },
   status: {
   type: String,
-  enum: ['Pending', 'In Review', 'Done', 'Completed', 'Declined', 'Rejected', 'Resolved', 'Closed'],
-  default: 'Pending'
+  enum: ['Waiting for Support', 'Pending', 'In Review', 'Done', 'Completed', 'Declined', 'Rejected', 'Resolved', 'Closed'],
+  default: 'Waiting for Support'
   },
   replies: [replySchema],
   assignedTo: {
