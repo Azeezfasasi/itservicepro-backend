@@ -6,14 +6,15 @@ const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-// Nodemailer transporter (reuse config from userController.js)
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: process.env.EMAIL_HOST,
+    port: Number(process.env.EMAIL_PORT), // Ensure port is a number
+    secure: process.env.EMAIL_SECURE === 'true', // Ensure secure is a boolean
     auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
     }
-});
+  });
 
 // Helper to get admin emails from .env (comma-separated)
 function getAdminEmails() {
@@ -27,7 +28,7 @@ async function sendOrderNotification({ to, subject, html, cc, bcc }) {
         to,
         cc,
         bcc,
-        from: process.env.GMAIL_USER,
+        from: process.env.EMAIL_USER,
         subject,
         html
     });

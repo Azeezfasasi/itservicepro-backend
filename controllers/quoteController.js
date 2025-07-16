@@ -4,12 +4,14 @@ const nodemailer = require('nodemailer'); // Re-added nodemailer import
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-});
+    host: process.env.EMAIL_HOST,
+    port: Number(process.env.EMAIL_PORT), // Ensure port is a number
+    secure: process.env.EMAIL_SECURE === 'true', // Ensure secure is a boolean
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
 
 // Helper to get admin emails from .env (comma-separated)
 function getAdminEmails() {
@@ -43,7 +45,7 @@ exports.sendQuoteRequest = async (req, res) => {
     // CHANGED: Use transporter.sendMail directly
     await transporter.sendMail({
       to: quote.email,
-      from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender for confirmation
+      from: process.env.EMAIL_USER, // Using GMAIL_USER as the sender for confirmation
       subject: 'We Received Your Quote Request on Marshall Global Ventures',
       html: `<h2>Thank you for submitting a quote request through the IT Marshall Global Ventures website!</h2><p>Dear ${quote.name},</p><p>We have received your request for <strong>${quote.service}</strong> and we are currently reviewing the details of your request to ensure we provide the most accurate and tailored response.</p><p>One of our IT experts will contact you shortly to discuss your requirements and the best solutions available. We appreciate your interest and trust in Marshall Global Ventures.</p><p>If you have any additional information you'd like to share in the meantime, please feel free to reply to this email.</p><p><strong>Your message:</strong> ${quote.message}</p><p>Kind regards,<br/><strong>Marshall Global Ventures Team</strong></p,<br/><br/><p><em>If you did not request a quote, please ignore this email.</em></p>`
     });
@@ -152,7 +154,7 @@ exports.assignQuoteToAdmin = async (req, res) => {
         to: populatedQuote.assignedTo.email,
         subject: emailSubject,
         html: emailHtml,
-        from: process.env.GMAIL_USER // Ensure this is set in your .env
+        from: process.env.EMAIL_USER // Ensure this is set in your .env
       });
       console.log(`Assignment notification email sent to ${populatedQuote.assignedTo.email}`);
     } catch (emailError) {
@@ -209,7 +211,7 @@ exports.updateQuoteRequest = async (req, res) => {
       // CHANGED: Use transporter.sendMail directly
       await transporter.sendMail({
         to: updated.email,
-        from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender
+        from: process.env.EMAIL_USER, // Using GMAIL_USER as the sender
         subject: 'Your Quote Request Has Been Updated',
         html: `<h2>Your Quote Request Update</h2>${statusText}${detailsText}<p>If you have questions, reply to this email.</p>`
       });
@@ -256,7 +258,7 @@ exports.adminReplyToQuoteRequest = async (req, res) => {
     // CHANGED: Use transporter.sendMail directly
     await transporter.sendMail({
       to: quote.email,
-      from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender
+      from: process.env.EMAIL_USER, // Using GMAIL_USER as the sender
       subject: `Reply to your Quote Request for ${quote.service} from Marshall Global Ventures`,
       html: `<h2>Regarding your Quote Request for ${quote.service}</h2>
              <p>Dear ${quote.name},</p>
@@ -338,7 +340,7 @@ exports.customerReplyToQuote = async (req, res) => {
     // CHANGED: Use transporter.sendMail directly
     await transporter.sendMail({
       to: customerEmail,
-      from: process.env.GMAIL_USER, // Using GMAIL_USER as the sender
+      from: process.env.EMAIL_USER, // Using GMAIL_USER as the sender
       subject: `Your Reply to Quote Request for ${quote.service} Has Been Sent`,
       html: `<h2>Your Reply Has Been Sent!</h2>
              <p>Dear ${quote.name},</p>

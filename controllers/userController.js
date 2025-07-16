@@ -27,17 +27,27 @@ exports.register = async (req, res) => {
     const token = generateToken(user);
 
     // --- EMAIL NOTIFICATIONS ---
+    // const transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: process.env.GMAIL_USER,
+    //     pass: process.env.GMAIL_PASS
+    //   }
+    // });
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS
-      }
+        host: process.env.EMAIL_HOST,
+        port: Number(process.env.EMAIL_PORT), // Ensure port is a number
+        secure: process.env.EMAIL_SECURE === 'true', // Ensure secure is a boolean
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
     });
+    
     // Send welcome email to user
     await transporter.sendMail({
       to: user.email,
-      from: process.env.GMAIL_USER,
+      from: process.env.EMAIL_USER,
       subject: 'Welcome to IT ServicePro',
       html: `<p>Hi ${user.name},</p><p>Welcome to IT ServicePro! Your account has been created successfully.</p>`
     });
@@ -45,7 +55,7 @@ exports.register = async (req, res) => {
     if (process.env.ADMIN_EMAIL) {
       await transporter.sendMail({
         to: process.env.ADMIN_EMAIL,
-        from: process.env.GMAIL_USER,
+        from: process.env.EMAIL_USER,
         subject: 'New User Registration',
         html: `<p>A new user has registered:</p><ul><li>Name: ${user.name}</li><li>Email: ${user.email}</li><li>Role: ${user.role || 'customer'}</li></ul>`
       });
@@ -83,17 +93,26 @@ exports.requestPasswordReset = async (req, res) => {
     await user.save();
 
     // Send email
+    // const transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: process.env.GMAIL_USER,
+    //     pass: process.env.GMAIL_PASS
+    //   }
+    // });
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS
-      }
-    });
+        host: process.env.EMAIL_HOST,
+        port: Number(process.env.EMAIL_PORT), // Ensure port is a number
+        secure: process.env.EMAIL_SECURE === 'true', // Ensure secure is a boolean
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
     const resetUrl = `${process.env.FRONTEND_URL || 'https://itservicepro-backend.onrender.com'}/reset-password/${token}`;
     await transporter.sendMail({
       to: user.email,
-      from: process.env.GMAIL_USER,
+      from: process.env.EMAIL_USER,
       subject: 'Password Reset',
       html: `<p>You requested a password reset.</p><p>Click <a href="${resetUrl}">here</a> to reset your password. This link expires in 1 hour.</p>`
     });
