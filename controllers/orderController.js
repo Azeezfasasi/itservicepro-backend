@@ -28,7 +28,6 @@ async function sendOrderNotification({ to, subject, html, cc, bcc }) {
         to,
         cc,
         bcc,
-        // from: process.env.EMAIL_USER,
         from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
         subject,
         html
@@ -241,7 +240,7 @@ exports.createOrder = async (req, res) => {
             // Email to customer
             await sendOrderNotification({
                 to: user.email,
-                from: `"Marshall Global Ventures"`,
+                from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
                 subject: `Your Order Confirmation - ${createdOrder.orderNumber} | Marshall Global Ventures`,
                 html: orderDetailsHtml
             });

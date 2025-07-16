@@ -45,8 +45,7 @@ exports.sendQuoteRequest = async (req, res) => {
     // CHANGED: Use transporter.sendMail directly
     await transporter.sendMail({
       to: quote.email,
-      from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-      from: process.env.EMAIL_USER, // Using GMAIL_USER as the sender for confirmation
+      from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`, 
       subject: 'We Received Your Quote Request on Marshall Global Ventures',
       html: `<h2>Thank you for submitting a quote request through the IT Marshall Global Ventures website!</h2><p>Dear ${quote.name},</p><p>We have received your request for <strong>${quote.service}</strong> and we are currently reviewing the details of your request to ensure we provide the most accurate and tailored response.</p><p>One of our IT experts will contact you shortly to discuss your requirements and the best solutions available. We appreciate your interest and trust in Marshall Global Ventures.</p><p>If you have any additional information you'd like to share in the meantime, please feel free to reply to this email.</p><p><strong>Your message:</strong> ${quote.message}</p><p>Kind regards,<br/><strong>Marshall Global Ventures Team</strong></p,<br/><br/><p><em>If you did not request a quote, please ignore this email.</em></p>`
     });
@@ -153,10 +152,9 @@ exports.assignQuoteToAdmin = async (req, res) => {
       // CHANGED: Use transporter.sendMail directly
       await transporter.sendMail({
         to: populatedQuote.assignedTo.email,
-        from: `"Marshall Global Ventures"`,
+        from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
         subject: emailSubject,
         html: emailHtml,
-        from: process.env.EMAIL_USER // Ensure this is set in your .env
       });
       console.log(`Assignment notification email sent to ${populatedQuote.assignedTo.email}`);
     } catch (emailError) {
@@ -214,7 +212,6 @@ exports.updateQuoteRequest = async (req, res) => {
       await transporter.sendMail({
         to: updated.email,
         from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-        // from: process.env.EMAIL_USER,
         subject: 'Your Quote Request Has Been Updated',
         html: `<h2>Your Quote Request Update</h2>${statusText}${detailsText}<p>If you have questions, reply to this email.</p>`
       });
@@ -261,8 +258,7 @@ exports.adminReplyToQuoteRequest = async (req, res) => {
     // CHANGED: Use transporter.sendMail directly
     await transporter.sendMail({
       to: quote.email,
-      from: `"Marshall Global Ventures"`,
-      from: process.env.EMAIL_USER, // Using GMAIL_USER as the sender
+      from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
       subject: `Reply to your Quote Request for ${quote.service} from Marshall Global Ventures`,
       html: `<h2>Regarding your Quote Request for ${quote.service}</h2>
              <p>Dear ${quote.name},</p>
@@ -345,7 +341,6 @@ exports.customerReplyToQuote = async (req, res) => {
     await transporter.sendMail({
       to: customerEmail,
       from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-      from: process.env.EMAIL_USER, // Using GMAIL_USER as the sender
       subject: `Your Reply to Quote Request for ${quote.service} Has Been Sent`,
       html: `<h2>Your Reply Has Been Sent!</h2>
              <p>Dear ${quote.name},</p>
