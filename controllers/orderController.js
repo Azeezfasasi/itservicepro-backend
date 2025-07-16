@@ -28,7 +28,8 @@ async function sendOrderNotification({ to, subject, html, cc, bcc }) {
         to,
         cc,
         bcc,
-        from: process.env.EMAIL_USER,
+        // from: process.env.EMAIL_USER,
+        from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
         subject,
         html
     });
@@ -240,6 +241,7 @@ exports.createOrder = async (req, res) => {
             // Email to customer
             await sendOrderNotification({
                 to: user.email,
+                from: `"Marshall Global Ventures"`,
                 subject: `Your Order Confirmation - ${createdOrder.orderNumber} | Marshall Global Ventures`,
                 html: orderDetailsHtml
             });
@@ -355,6 +357,7 @@ exports.updateOrderToDelivered = async (req, res) => {
             // Email to customer
             await sendOrderNotification({
                 to: user.email,
+                from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
                 subject: `Your Order Has Been Delivered - ${order.orderNumber}`,
                 html: orderDetailsHtml
             });
@@ -428,6 +431,7 @@ exports.updateOrderStatus = async (req, res) => {
             // Email to customer
             await sendOrderNotification({
                 to: user.email,
+                from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
                 subject: `Order Status Updated - ${order.orderNumber} | ${order.status}`,
                 html: orderDetailsHtml
             });
@@ -435,6 +439,7 @@ exports.updateOrderStatus = async (req, res) => {
             if (adminEmails.length > 0) {
                 await sendOrderNotification({
                     to: adminEmails[0],
+                    from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
                     cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
                     subject: `Order Status Updated - ${order.orderNumber} | ${order.status}`,
                     html: orderDetailsHtml
