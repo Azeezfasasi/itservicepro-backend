@@ -40,7 +40,7 @@ exports.subscribe = async (req, res) => {
       subscriber = await NewsletterSubscriber.create({ email, name, unsubscribeToken });
     }
     // Send confirmation email to subscriber
-    const unsubscribeUrl = `${process.env.FRONTEND_URL || 'https://itservicepro.netlify.app'}/api/newsletter/unsubscribe/${unsubscribeToken}`;
+    const unsubscribeUrl = `${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/api/newsletter/unsubscribe/${unsubscribeToken}`;
     await transporter.sendMail({
       to: email,
       from: process.env.GMAIL_USER,
@@ -48,14 +48,14 @@ exports.subscribe = async (req, res) => {
       html: `
         <div style="max-width:520px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:sans-serif;">
           <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-            <img src="https://itservicepro.netlify.app/itfavicon.png" alt="IMarshall Global Ventures" style="height:60px;margin-bottom:8px;" />
+            <img src="https://mgv-tech.com/itfavicon.png" alt="IMarshall Global Ventures" style="height:60px;margin-bottom:8px;" />
             <h1 style="color:#fff;margin:0;font-size:2rem;">Welcome to Marshall Global Ventures!</h1>
           </div>
           <div style="padding:32px 24px 24px 24px;">
             <p style="font-size:1.1rem;color:#222;">Hi${name ? ' ' + name : ''},</p>
             <p style="font-size:1.1rem;color:#222;">Thank you for subscribing to our newsletter! 🎉</p>
             <p style="color:#222;">You will now receive the latest updates, offers, and expert tips from our team.</p>
-            <a href="https://itservicepro.netlify.app" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Visit Our Website</a>
+            <a href="https://mgv-tech.com" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Visit Our Website</a>
             <p style="font-size:0.95rem;color:#555;margin-top:24px;">If you did not subscribe, you can ignore this email or <a href="${unsubscribeUrl}" style="color:#00B9F1;">unsubscribe here</a>.</p>
             <p style="margin-top:32px;color:#888;font-size:0.95rem;">Best regards,<br/>Marshall Global Ventures Team</p>
           </div>
@@ -100,7 +100,7 @@ exports.unsubscribeByToken = async (req, res) => {
     // Optionally clear token to prevent reuse
     // subscriber.unsubscribeToken = undefined;
     await subscriber.save();
-    res.send('<div style="max-width:420px;margin:40px auto;padding:32px 24px;border-radius:8px;border:1px solid #e0e0e0;font-family:sans-serif;text-align:center;"><h2 style="color:#00B9F1;">You have been unsubscribed.</h2><p style="color:#444;">You will no longer receive our newsletters.</p><a href="https://itservicepro.netlify.app" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Return to Website</a></div>');
+    res.send('<div style="max-width:420px;margin:40px auto;padding:32px 24px;border-radius:8px;border:1px solid #e0e0e0;font-family:sans-serif;text-align:center;"><h2 style="color:#00B9F1;">You have been unsubscribed.</h2><p style="color:#444;">You will no longer receive our newsletters.</p><a href="https://mgv-tech.com" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Return to Website</a></div>');
   } catch (err) {
     res.status(500).send('Failed to unsubscribe.');
   }

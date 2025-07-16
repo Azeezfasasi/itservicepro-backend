@@ -231,10 +231,10 @@ exports.createOrder = async (req, res) => {
                 <br />
                 <h3>Shipping Details</h3>
                 <p>${createdOrder.shippingAddress.address1}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.zipCode}, ${createdOrder.shippingAddress.country}</p>
-                <p>We will notify you once your order is shipped. For mean time, you can track your order status on <a href="https://itservicepro.netlify.app/app/trackorder">our website</a>.</p>
+                <p>We will notify you once your order is shipped. For mean time, you can track your order status on <a href="mgv-tech.com/app/trackorder">our website</a>.</p>
                 <p>Thank you for shopping with us!</p>
                 <p>Best regards,</p>
-                <p>Marshall Global Ventures Team - <a href="https://itservicepro.netlify.app">Visit our website for more details.</a></p>
+                <p>Marshall Global Ventures Team - <a href="https://mgv-tech.com">Visit our website for more details.</a></p>
             `;
             // Email to customer
             await sendOrderNotification({
@@ -422,7 +422,7 @@ exports.updateOrderStatus = async (req, res) => {
                 <p><strong>Thank you for shopping with Marshall Global Ventures.</strong></p>
                 <p>We appreciate your trust and look forward to serving you again.</p>
                 <p>Warm regards,</p>
-                <p>Marshall Global Ventures Team - <a href="https://itservicepro.netlify.app/app/trackorder">Track your order status here.</a></p>
+                <p>Marshall Global Ventures Team - <a href="https://mgv-tech.com/app/trackorder">Track your order status here.</a></p>
             `;
             // Email to customer
             await sendOrderNotification({

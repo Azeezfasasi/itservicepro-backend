@@ -36,7 +36,7 @@ exports.sendQuoteRequest = async (req, res) => {
       to: adminEmails[0] || process.env.RECEIVER_EMAIL,
       cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
       subject: `Quote Request from ${quote.name} on Marshall Global Ventures`,
-      html: `<p><strong>Hello Admin,</strong></p><p>A new quote request has just been submitted through the Marshall Global Ventures website. Please review the details below:</p><p><strong>Service Requested:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email}) (${quote.phone})</p><br /><p>Please <a href="https://itservicepro.netlify.app/login">log in</a> to your admin dashboard to follow up or assign this request to a team member.</p>`
+      html: `<p><strong>Hello Admin,</strong></p><p>A new quote request has just been submitted through the Marshall Global Ventures website. Please review the details below:</p><p><strong>Service Requested:</strong> ${quote.service}</p><p><strong>Message:</strong> ${quote.message}</p><p><strong>From:</strong> ${quote.name} (${quote.email}) (${quote.phone})</p><br /><p>Please <a href="https://mgv-tech.com/login">log in</a> to your admin dashboard to follow up or assign this request to a team member.</p>`
     });
 
     // Send confirmation email to customer
@@ -141,7 +141,7 @@ exports.assignQuoteToAdmin = async (req, res) => {
         <li><strong>Status:</strong> ${populatedQuote.status}</li>
       </ul>
       <p>Please log in to the admin panel to view the full details and respond to the customer.</p>
-      <p><a href="https://itservicepro.netlify.app/app/quote">Click here to view the quote in the admin panel</a></p>
+      <p><a href="https://mgv-tech.com/app/quote">Click here to view the quote in the admin panel</a></p>
       <p>Thank you,</p>
       <p>Your IT ServicePro Team</p>
     `;
@@ -331,7 +331,7 @@ exports.customerReplyToQuote = async (req, res) => {
              <div style="background-color: #f0f4f8; padding: 15px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px;">
                <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
              </div>
-             <p>Please <a href="https://itservicepro.netlify.app/login">log in</a> to your admin dashboard to view the full conversation.</p>`
+             <p>Please <a href="https://mgv-tech.com/login">log in</a> to your admin dashboard to view the full conversation.</p>`
     });
 
     // Optionally send a confirmation to the customer that their reply was received
