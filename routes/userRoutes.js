@@ -11,7 +11,8 @@ const {
   editUser,
   deleteUser,
   disableUser,
-  resetUserPassword
+  resetUserPassword,
+  getAllAdmins
 } = require('../controllers/userController');
 const { auth, authorizeRoles } = require('../middleware/auth');
 
@@ -41,6 +42,9 @@ router.put('/me', auth, updateProfile);
 // Admin/Super Admin routes
 // GET /api/users
 router.get('/', auth, authorizeRoles, getAllUsers);
+
+// GET /api/users/admins (Admin/Super Admin only to get all admin users)
+router.get('/admins', auth, authorizeRoles, getAllAdmins);
 
 // PUT /api/users/:id
 router.put('/:id', auth, authorizeRoles, editUser);

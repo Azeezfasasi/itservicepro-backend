@@ -135,6 +135,17 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+exports.getAllAdmins = async (req, res) => {
+  try {
+    // Fetch users with 'admin' or 'super admin' roles
+    const admins = await User.find({ role: { $in: ['admin', 'super admin'] } }).select('name email');
+    res.status(200).json(admins);
+  } catch (err) {
+    console.error('Error fetching admin users:', err);
+    res.status(500).json({ error: 'Failed to fetch admin users.' });
+  }
+};
+
 // 2. User: Get own profile
 exports.getProfile = async (req, res) => {
   try {
