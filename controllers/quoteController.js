@@ -187,6 +187,29 @@ exports.getCustomerQuotes = async (req, res) => {
   }
 };
 
+exports.getAssignedQuotes = async (req, res) => {
+  // Ensure the user is authenticated and is an admin or super admin
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'super admin')) {
+    return res.status(403).json({ error: 'Unauthorized: Only admins can view assigned quotes.' });
+  }
+
+  try {
+    const adminId = req.user.id; // Get the ID of the authenticated admin user
+    console.log(`Fetching quotes assigned to admin ID: ${adminId}`);
+
+    const quotes = await QuoteRequest.find({ assignedTo: adminId })
+      .populate('replies.senderId', 'name')
+      .populate('assignedTo', 'name email')
+      .sort({ createdAt: -1 }); // Sort by creation date, newest first
+
+    console.log(`Found ${quotes.length} quotes assigned to ${adminId}`);
+    res.status(200).json(quotes);
+  } catch (err) {
+    console.error('Error fetching assigned quotes:', err);
+    res.status(500).json({ error: 'Failed to fetch assigned quote requests.', details: err.message });
+  }
+};
+
 exports.deleteQuoteRequest = async (req, res) => {
   try {
     await QuoteRequest.findByIdAndDelete(req.params.id);

@@ -9,6 +9,9 @@ router.post('/quote', quoteController.sendQuoteRequest);
 // GET /api/quotes (Admin-only route to get all quotes)
 router.get('/quotes', auth, authorizeRoles, quoteController.getAllQuoteRequests);
 
+// GET /api/quotes/assigned (Admin-only route to get quotes assigned to current admin)
+router.get('/quotes/assigned', auth, authorizeRoles, quoteController.getAssignedQuotes);
+
 // DELETE /api/quotes/:id (Admin-only route to delete a quote)
 router.delete('/quotes/:id', auth, authorizeRoles, quoteController.deleteQuoteRequest);
 
