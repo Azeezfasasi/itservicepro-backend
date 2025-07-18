@@ -67,7 +67,7 @@ exports.subscribe = async (req, res) => {
       <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
         <!-- Header Section -->
         <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-          <img src="https://mgv-tech.com/itfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+          <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
           <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Welcome to Marshall Global Ventures!</h1>
         </div>
 
