@@ -41,16 +41,110 @@ exports.register = async (req, res) => {
     await transporter.sendMail({
       to: user.email,
       from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-      subject: 'Welcome to IT ServicePro',
-      html: `<p>Hi ${user.name},</p><p>Welcome to IT ServicePro! Your account has been created successfully.</p>`
+      subject: 'Welcome to Marshall Global Ventures',
+      html: `
+      <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+
+        // Header section
+        <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+            <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+            <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
+        </div>
+
+        <!-- Body Section -->
+        <div style="padding:32px 24px 24px 24px;">
+          <div style="padding:32px 24px 24px 24px;color:#222;line-height:1.6;">
+            <p style="font-size:1.1rem;margin-bottom:16px;">Hi ${customerName},</p>
+            <h2 style="font-size:1.8rem;color:#00B9F1;margin-bottom:16px;">Your Account at Marshall Global Ventures Has Been Created!</h2>
+            <p style="font-size:1.1rem;margin-bottom:16px;">
+              We are thrilled to welcome you to the Marshall Global Ventures community! Your account has been successfully created.
+            </p>
+            <p style="color:#222;line-height:1.5;margin-bottom:24px;">
+              You can now log in to manage your profile, view your orders, track quote requests, and explore all the services and products we offer.
+            </p>
+            <a href="${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/login" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:1rem;box-shadow:0 4px 8px rgba(0, 185, 241, 0.2);">Log In to Your Account</a>
+            <p style="margin-top:32px;color:#888;font-size:0.95rem;line-height:1.5;">
+              If you have any questions or need assistance, please do not hesitate to contact our support team.
+            </p>
+            <p style="margin-top:16px;color:#888;font-size:0.95rem;line-height:1.5;">Best regards,<br/>The Marshall Global Ventures Team</p>
+          </div>
+        </div>
+
+        <!-- Footer Section -->
+        <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+          <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+          <p style="margin:0 0 8px 0;">
+              123 Ikorodu Road, Lagos, Nigeria
+          </p>
+          <p style="margin:0 0 16px 0;">
+              Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+          </p>
+          <div style="margin-top:10px;">
+            <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+            <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+            <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+            <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+          </div>
+        </div>
+      </div>
+      `
     });
     // Send notification email to admin
     if (process.env.ADMIN_EMAIL) {
       await transporter.sendMail({
         to: process.env.ADMIN_EMAIL,
         from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-        subject: 'New User Registration',
-        html: `<p>A new user has registered:</p><ul><li>Name: ${user.name}</li><li>Email: ${user.email}</li><li>Role: ${user.role || 'customer'}</li></ul>`
+        subject: `New User Registration || ${user.name}`,
+        html: `
+        <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+
+          // Header section
+          <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+              <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+              <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
+          </div>
+
+          <!-- Body Section -->
+          <div style="padding:32px 24px 24px 24px;">
+            <div style="color:#222;line-height:1.6;">
+              <p style="font-size:1.1rem;margin-bottom:16px;">Hi Marshall Global Ventures Team,</p>
+              <h2 style="font-size:1.8rem;color:#00B9F1;margin-bottom:16px;">New User Registration Notification!</h2>
+              <p style="font-size:1.1rem;margin-bottom:16px;">
+                A new user has successfully registered on your website. Here are their details:
+              </p>
+              <h3 style="font-size:1.3rem;color:#333;margin-top:24px;margin-bottom:12px;">User Information:</h3>
+              <ul style="list-style:none;padding:0;margin:0;">
+                <li style="margin-bottom:8px;"><strong>Name:</strong> ${newUser.name || 'N/A'}</li>
+                <li style="margin-bottom:8px;"><strong>Email:</strong> ${newUser.email}</li>
+                <li style="margin-bottom:8px;"><strong>Role:</strong> ${newUser.role || 'customer'}</li>
+                <li style="margin-bottom:8px;"><strong>Registration Date:</strong> ${new Date(newUser.createdAt).toLocaleString()}</li>
+              </ul>
+              <p style="margin-top:24px;margin-bottom:24px;">
+                Please log in to the admin dashboard to view the user's full profile or manage user accounts.
+              </p>
+              <a href="${process.env.FRONTEND_URL || 'https://mgv-tech.com'}//app/allusers" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:1rem;box-shadow:0 4px 8px rgba(0, 185, 241, 0.2);">View User in Admin Dashboard</a>
+              <p style="margin-top:32px;color:#888;font-size:0.95rem;line-height:1.5;">Best regards,<br/>The Marshall Global Ventures</p>
+            </div>
+          </div>
+
+          <!-- Footer Section -->
+          <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+            <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+            <p style="margin:0 0 8px 0;">
+              123 Ikorodu Road, Lagos, Nigeria
+            </p>
+            <p style="margin:0 0 16px 0;">
+              Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+            </p>
+            <div style="margin-top:10px;">
+              <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+              <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+              <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+              <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+            </div>
+          </div>
+        </div>
+        `
       });
     }
     // --- END EMAIL NOTIFICATIONS ---
@@ -100,7 +194,9 @@ exports.requestPasswordReset = async (req, res) => {
       to: user.email,
       from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
       subject: 'Password Reset',
-      html: `<p>You requested a password reset.</p><p>Click <a href="${resetUrl}">here</a> to reset your password. This link expires in 1 hour.</p>`
+      html: `
+      <p>You requested a password reset.</p><p>Click <a href="${resetUrl}">here</a> to reset your password. This link expires in 1 hour.</p>
+      `
     });
     res.json({ message: 'Password reset email sent.' });
   } catch (err) {
