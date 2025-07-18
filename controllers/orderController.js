@@ -47,7 +47,7 @@ async function getNextSequenceValue(sequenceName) {
 // Helper function to format the order number
 function formatOrderNumber(sequenceNumber) {
     const paddedSequence = String(sequenceNumber).padStart(9, '0');
-    return `ITS${paddedSequence}`;
+    return `MGV${paddedSequence}`;
 }
 
 exports.createOrder = async (req, res) => {
@@ -214,29 +214,111 @@ exports.createOrder = async (req, res) => {
             const user = await User.findById(req.user._id);
             const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
-                <h2>Hi ${user.name}</h2>
-                <p>Thank you for placing your order with Marshall Global Ventures with order number: ${createdOrder.orderNumber}</p>
-                <p>We have received your request and are currently processing it.</p>
-                <br />
-                <h3>Order Summary</h3>
-                <p><strong>Order Number:</strong> ${createdOrder.orderNumber}</p>
-                <p><strong>Status:</strong> ${createdOrder.status}</p>
-                <p><strong>Total Amount:</strong> ₦${createdOrder.totalPrice}</p>
-                <p><strong>Payment Method:</strong> ₦${createdOrder.paymentMethod}</p>
-                <p><strong>Payment Status:</strong> ${createdOrder.isPaid ? 'Paid' : 'Not Paid'}</p>
-                <br />
-                <h3>Items Ordered</h3>
-                <ul>
-                    ${createdOrder.orderItems.map(item => `<li>${item.name} x ${item.quantity} (₦${item.price})</li>`).join('')}
-                </ul>
-                <br />
-                <h3>Shipping Details</h3>
-                <p>${createdOrder.shippingAddress.address1}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.zipCode}, ${createdOrder.shippingAddress.country}</p>
-                <p>We will notify you once your order is shipped. For mean time, you can track your order status on <a href="mgv-tech.com/app/trackorder">our website</a>.</p>
-                <p>Thank you for shopping with us!</p>
-                <p>Best regards,</p>
-                <p>Marshall Global Ventures Team - <a href="https://mgv-tech.com">Visit our website for more details.</a></p>
+            <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+                // Header section
+                <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+                    <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+                    <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
+                </div>
+
+                // Bodey section
+                <div style="padding:32px 24px 24px 24px;">
+                    <h2>Hi ${user.name}</h2>
+                    <p>Thank you for placing your order with Marshall Global Ventures with order number: ${createdOrder.orderNumber}</p>
+                    <p>We have received your request and are currently processing it.</p>
+                    <br />
+                    <h3>Order Summary</h3>
+                    <p><strong>Order Number:</strong> ${createdOrder.orderNumber}</p>
+                    <p><strong>Status:</strong> ${createdOrder.status}</p>
+                    <p><strong>Total Amount:</strong> ₦${createdOrder.totalPrice}</p>
+                    <p><strong>Payment Method:</strong> ₦${createdOrder.paymentMethod}</p>
+                    <p><strong>Payment Status:</strong> ${createdOrder.isPaid ? 'Paid' : 'Not Paid'}</p>
+                    <br />
+                    <h3>Items Ordered</h3>
+                    <ul>
+                        ${createdOrder.orderItems.map(item => `<li>${item.name} x ${item.quantity} (₦${item.price})</li>`).join('')}
+                    </ul>
+                    <br />
+                    <h3>Shipping Details</h3>
+                    <p>${createdOrder.shippingAddress.address1}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.zipCode}, ${createdOrder.shippingAddress.country}</p>
+                    <p>We will notify you once your order is shipped. For mean time, you can track your order status on <a href="mgv-tech.com/app/trackorder">our website</a>.</p>
+                    <p>Thank you for shopping with us!</p>
+                    <p>Best regards,</p>
+                    <p>Marshall Global Ventures Team - <a href="https://mgv-tech.com">Visit our website for more details.</a></p>
+                </div>
+
+                // Footer section
+                <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+                    <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+                    <p style="margin:0 0 8px 0;">
+                        123 Ikorodu Road, Lagos, Nigeria
+                    </p>
+                    <p style="margin:0 0 16px 0;">
+                        Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+                    </p>
+                    <div style="margin-top:10px;">
+                        <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+                        <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+                        <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+                        <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+                    </div>
+                </div>
+            </div>
             `;
+
+            const adminOrderNotificationHtml = `
+              <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+                
+                // Header section
+                <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+                    <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+                    <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
+                </div>
+
+                // Body section
+                <div style="padding:32px 24px 24px 24px;">
+                  <h2 style="font-size:1.8rem;color:#00B9F1;margin-bottom:16px;">Hi Marshall Global Ventures, New Order Placed</h2>
+                  <p style="font-size:1.1rem;color:#222;margin-bottom:16px;">A new order has been placed by <strong>${customer.name || customer.email}</strong> (${customer.email}).</p>
+                  <p style="color:#222;line-height:1.5;margin-bottom:24px;">Order Number: <strong>${createdOrder.orderNumber}</strong></p>
+                  
+                  <h3>Order Summary</h3>
+                  <p><strong>Order Number:</strong> ${createdOrder.orderNumber}</p>
+                  <p><strong>Status:</strong> ${createdOrder.status}</p>
+                  <p><strong>Total Amount:</strong> ₦${createdOrder.totalPrice}</p>
+                  <p><strong>Payment Method:</strong> ${createdOrder.paymentMethod}</p>
+                  <p><strong>Payment Status:</strong> ${createdOrder.isPaid ? 'Paid' : 'Not Paid'}</p>
+                  <br />
+                  <h3>Items Ordered</h3>
+                  <ul>
+                    ${createdOrder.orderItems.map(item => `<li>${item.name} x ${item.quantity} (₦${item.price})</li>`).join('')}
+                  </ul>
+                  <br />
+                  <h3>Shipping Details</h3>
+                  <p>${createdOrder.shippingAddress.address1}, ${createdOrder.shippingAddress.city}, ${createdOrder.shippingAddress.zipCode}, ${createdOrder.shippingAddress.country}</p>
+
+                  <p style="margin-top:32px;color:#888;font-size:0.95rem;line-height:1.5;">Please, login to your dashboard to review the order details and proceed with processing. You can also update the order status so the customer is aware of the update.</p>
+                  <p style="margin-top:16px;color:#888;font-size:0.95rem;line-height:1.5;">Marshall Global Ventures</p>
+                </div>
+                
+                // Footer section
+                <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+                    <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+                    <p style="margin:0 0 8px 0;">
+                        123 Ikorodu Road, Lagos, Nigeria
+                    </p>
+                    <p style="margin:0 0 16px 0;">
+                        Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+                    </p>
+                    <div style="margin-top:10px;">
+                        <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+                        <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+                        <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+                        <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+                    </div>
+                </div>
+              </div>
+            `;
+
             // Email to customer
             await sendOrderNotification({
                 to: user.email,
@@ -250,7 +332,7 @@ exports.createOrder = async (req, res) => {
                     to: adminEmails[0],
                     cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
                     subject: `New Order Placed - ${createdOrder.orderNumber}`,
-                    html: `<p>New order placed by ${user.name} (${user.email})</p>` + orderDetailsHtml
+                    html: adminOrderNotificationHtml
                 });
             }
         } catch (emailErr) {
@@ -347,11 +429,93 @@ exports.updateOrderToDelivered = async (req, res) => {
             const user = await User.findById(order.userId);
             const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
-                <h2>Order Delivered - ${order.orderNumber}</h2>
-                <p>Order for ${user.name} (${user.email}) has been marked as <strong>Delivered</strong>.</p>
-                <p><strong>Order Number:</strong> ${order.orderNumber}</p>
-                <p><strong>Status:</strong> Delivered</p>
-                <p><strong>Total:</strong> ₦${order.totalPrice}</p>
+            <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+
+                // Header section
+                <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+                    <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+                    <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
+                </div>
+
+                 <!-- Body Section -->
+                <div style="padding:32px 24px 24px 24px;">
+                    <h2>Order Delivered - ${order.orderNumber}</h2>
+                    <p>Order for ${user.name} (${user.email}) has been marked as <strong>Delivered</strong>.</p>
+                    <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+                    <p><strong>Status:</strong> Delivered</p>
+                    <p><strong>Total:</strong> ₦${order.totalPrice}</p>
+                </div>
+
+                <!-- Footer Section -->
+                <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+                    <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+                    <p style="margin:0 0 8px 0;">
+                        123 Ikorodu Road, Lagos, Nigeria
+                    </p>
+                    <p style="margin:0 0 16px 0;">
+                        Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+                    </p>
+                    <div style="margin-top:10px;">
+                        <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+                        <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+                        <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+                        <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+                    </div>
+                </div>
+            </div>
+            `;
+            const adminOrderDetailsHtml = `
+            <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+
+                // Header section
+                <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+                    <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+                    <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
+                </div>
+
+                <!-- Body Section -->
+                <div style="padding:32px 24px 24px 24px;">                    
+                    <p style="font-size:1.1rem;margin-bottom:16px;">Dear Marshall Global Ventures Team,</p>
+
+                    <h2 style="font-size:1.8rem;color:#00B9F1;margin-bottom:16px;">Order Status Update: Delivered!</h2>
+
+                    <p style="font-size:1.1rem;margin-bottom:16px;">
+                        This notification confirms that Order Number <strong>${order.orderNumber}</strong> has been successfully marked as <strong>Delivered</strong> in our system.
+                    </p>
+
+                    <h3 style="font-size:1.3rem;color:#333;margin-top:24px;margin-bottom:12px;">Order Details Summary:</h3>
+                    <ul style="list-style:none;padding:0;margin:0;">
+                        <li style="margin-bottom:8px;"><strong>Order Number:</strong> <span style="color:#00B9F1;">${order.orderNumber}</span></li>
+                        <li style="margin-bottom:8px;"><strong>Customer:</strong> ${user.name || user.email} (${user.email})</li>
+                        <li style="margin-bottom:8px;"><strong>Current Status:</strong> <span style="color:#28a745;font-weight:bold;">Delivered</span></li>
+                        <li style="margin-bottom:8px;"><strong>Total Amount:</strong> ₦${order.totalPrice ? order.totalPrice.toFixed(2) : '0.00'}</li>
+                    </ul>
+
+                    <p style="margin-top:24px;margin-bottom:24px;">
+                        Please log in to the admin dashboard to review the full order details and take any necessary follow-up actions.
+                    </p>
+                    <a href="${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/app/vieworderdetails/${order._id}" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:1rem;box-shadow:0 4px 8px rgba(0, 185, 241, 0.2);">View Order in Admin Panel</a>
+
+                    <p style="margin-top:32px;color:#888;font-size:0.95rem;line-height:1.5;">Best regards,<br/>The Marshall Global Ventures System</p>
+                </div>
+
+                <!-- Footer Section -->
+                <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+                    <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+                    <p style="margin:0 0 8px 0;">
+                        123 Ikorodu Road, Lagos, Nigeria
+                    </p>
+                    <p style="margin:0 0 16px 0;">
+                        Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+                    </p>
+                    <div style="margin-top:10px;">
+                        <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+                        <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+                        <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+                        <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+                    </div>
+                </div>
+            </div>
             `;
             // Email to customer
             await sendOrderNotification({
@@ -366,7 +530,7 @@ exports.updateOrderToDelivered = async (req, res) => {
                     to: adminEmails[0],
                     cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
                     subject: `Order Delivered - ${order.orderNumber}`,
-                    html: orderDetailsHtml
+                    html: adminOrderDetailsHtml
                 });
             }
         } catch (emailErr) {
@@ -411,21 +575,90 @@ exports.updateOrderStatus = async (req, res) => {
             const user = await User.findById(order.userId);
             const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
-                <h3>Hi ${user.name}</h3>
-                <p>We are happy to let you know that the status of your order ${order.orderNumber} has been updated.
-                <br />
-                <h2>Order Details</h2>
-                <p><strong>Customer:</strong> ${user.name}</p>
-                <p><strong>Order Number:</strong> ${order.orderNumber}</p>
-                <p><strong>Current Status:</strong> ${order.status}</p>
-                <p><strong>Order Total:</strong> ₦${order.totalPrice}</p>
-                <p>Our team is now preparing your items for shipment. Once your order is dispatched, we will send you another update with tracking details.</p>
-                <p>If you have any questions or need assistance, feel free to reach out to us.</p>
-                <br />
-                <p><strong>Thank you for shopping with Marshall Global Ventures.</strong></p>
-                <p>We appreciate your trust and look forward to serving you again.</p>
-                <p>Warm regards,</p>
-                <p>Marshall Global Ventures Team - <a href="https://mgv-tech.com/app/trackorder">Track your order status here.</a></p>
+            <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+
+                // Header section
+                <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+                    <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+                    <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
+                </div>
+
+                <!-- Body Section -->
+                <div style="padding:32px 24px 24px 24px;">
+                    <h3>Hi ${user.name}</h3>
+                    <p>We are happy to let you know that the status of your order ${order.orderNumber} has been updated.
+                    <br />
+                    <h2>Order Details</h2>
+                    <p><strong>Customer:</strong> ${user.name}</p>
+                    <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+                    <p><strong>Current Status:</strong> ${order.status}</p>
+                    <p><strong>Order Total:</strong> ₦${order.totalPrice}</p>
+                    <p>Our team is now preparing your items for shipment. Once your order is dispatched, we will send you another update with tracking details.</p>
+                    <p>If you have any questions or need assistance, feel free to reach out to us.</p>
+                    <br />
+                    <p><strong>Thank you for shopping with Marshall Global Ventures.</strong></p>
+                    <p>We appreciate your trust and look forward to serving you again.</p>
+                    <p>Warm regards,</p>
+                    <p>Marshall Global Ventures Team - <a href="https://mgv-tech.com/app/trackorder">Track your order status here.</a></p>
+                </div>
+
+                <!-- Footer Section -->
+                <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+                    <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+                    <p style="margin:0 0 8px 0;">
+                        123 Ikorodu Road, Lagos, Nigeria
+                    </p>
+                    <p style="margin:0 0 16px 0;">
+                        Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+                    </p>
+                    <div style="margin-top:10px;">
+                        <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+                        <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+                        <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+                        <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+                    </div>
+                </div>
+            </div>
+            `;
+
+            const AdminOrderDetailsHtml = `
+            <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+
+                // Header section
+                <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+                    <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+                    <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
+                </div>
+
+                <!-- Body Section -->
+                <div style="padding:32px 24px 24px 24px;">
+                    <h3>Hi Marshall Glabal Ventures Team,</h3>
+                    <p>This is to let you know that the order ${order.orderNumber} has been updated.
+                    <br />
+                    <h2>Order Details</h2>
+                    <p><strong>Customer:</strong> ${user.name}</p>
+                    <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+                    <p><strong>Current Status:</strong> ${order.status}</p>
+                    <p><strong>Order Total:</strong> ₦${order.totalPrice}</p>
+                </div>
+                
+                <!-- Footer Section -->
+                <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+                    <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+                    <p style="margin:0 0 8px 0;">
+                        123 Ikorodu Road, Lagos, Nigeria
+                    </p>
+                    <p style="margin:0 0 16px 0;">
+                        Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+                    </p>
+                    <div style="margin-top:10px;">
+                        <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+                        <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+                        <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+                        <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+                    </div>
+                </div>
+            </div>
             `;
             // Email to customer
             await sendOrderNotification({
@@ -441,7 +674,7 @@ exports.updateOrderStatus = async (req, res) => {
                     from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
                     cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
                     subject: `Order Status Updated - ${order.orderNumber} | ${order.status}`,
-                    html: orderDetailsHtml
+                    html: AdminOrderDetailsHtml
                 });
             }
         } catch (emailErr) {

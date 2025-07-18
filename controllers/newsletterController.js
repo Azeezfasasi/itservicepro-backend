@@ -46,23 +46,7 @@ exports.subscribe = async (req, res) => {
     await transporter.sendMail({
       to: email,
       from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-      subject: 'Newsletter Subscription Confirmed',
-      // html: `
-      //   <div style="max-width:520px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:sans-serif;">
-      //     <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-      //       <img src="https://mgv-tech.com/itfavicon.png" alt="IMarshall Global Ventures" style="height:60px;margin-bottom:8px;" />
-      //       <h1 style="color:#fff;margin:0;font-size:2rem;">Welcome to Marshall Global Ventures!</h1>
-      //     </div>
-      //     <div style="padding:32px 24px 24px 24px;">
-            // <p style="font-size:1.1rem;color:#222;">Hi${name ? ' ' + name : ''},</p>
-      //       <p style="font-size:1.1rem;color:#222;">Thank you for subscribing to our newsletter! 🎉</p>
-      //       <p style="color:#222;">You will now receive the latest updates, offers, and expert tips from our team.</p>
-      //       <a href="https://mgv-tech.com" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Visit Our Website</a>
-      //       <p style="font-size:0.95rem;color:#555;margin-top:24px;">If you did not subscribe, you can ignore this email or <a href="${unsubscribeUrl}" style="color:#00B9F1;">unsubscribe here</a>.</p>
-      //       <p style="margin-top:32px;color:#888;font-size:0.95rem;">Best regards,<br/>Marshall Global Ventures Team</p>
-      //     </div>
-      //   </div>
-      // `
+      subject: `Newsletter Subscription Confirmed, ${name || email}`,
       html: `
       <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
         <!-- Header Section -->
@@ -73,11 +57,11 @@ exports.subscribe = async (req, res) => {
 
         <!-- Body Section -->
         <div style="padding:32px 24px 24px 24px;">
-          <p style="font-size:1.1rem;color:#222;margin-bottom:16px;">Hi ${name ? ' ' + name : ''},</p>
+          <p style="font-size:1.1rem;color:#222;margin-bottom:16px;">Hi ${name || email}</p>
           <p style="font-size:1.1rem;color:#222;margin-bottom:16px;">Thank you for subscribing to our newsletter! &#127881;</p>
           <p style="color:#222;line-height:1.5;margin-bottom:24px;">You will now receive the latest updates, exclusive offers, and expert tips from our team, directly to your inbox. We're excited to have you with us!</p>
           <a href="https://mgv-tech.com" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:1rem;box-shadow:0 4px 8px rgba(0, 185, 241, 0.2);">Visit Our Website</a>
-          <p style="font-size:0.95rem;color:#555;margin-top:32px;line-height:1.5;">If you did not subscribe to this newsletter, please ignore this email. If you believe this is an error or wish to stop receiving these emails, you can <a href="{{unsubscribeUrl}}" style="color:#00B9F1;text-decoration:underline;">unsubscribe here</a> at any time.</p>
+          <p style="font-size:0.95rem;color:#555;margin-top:32px;line-height:1.5;">If you did not subscribe to this newsletter, please ignore this email. If you believe this is an error or wish to stop receiving these emails, you can <a href="https://mgv-tech.com'}/api/newsletter/unsubscribe/${unsubscribeUrl}" style="color:#00B9F1;text-decoration:underline;">unsubscribe here</a> at any time.</p>
           <p style="margin-top:32px;color:#888;font-size:0.95rem;line-height:1.5;">Best regards,<br/>The Marshall Global Ventures Team</p>
         </div>
 
@@ -138,7 +122,38 @@ exports.unsubscribeByToken = async (req, res) => {
     // Optionally clear token to prevent reuse
     // subscriber.unsubscribeToken = undefined;
     await subscriber.save();
-    res.send('<div style="max-width:420px;margin:40px auto;padding:32px 24px;border-radius:8px;border:1px solid #e0e0e0;font-family:sans-serif;text-align:center;"><h2 style="color:#00B9F1;">You have been unsubscribed.</h2><p style="color:#444;">You will no longer receive our newsletters.</p><a href="https://mgv-tech.com" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Return to Website</a></div>');
+    res.send(`
+      <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+        <!-- Header Section -->
+        <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+          <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+        </div>
+
+        <!-- Body Section -->
+        <div style="padding:32px 24px 24px 24px;">
+          <h2 style="color:#00B9F1;">You have been unsubscribed.</h2>
+          <p style="color:#444;">You will no longer receive our newsletters.</p>
+          <a href="https://mgv-tech.com" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Return to Website</a></div>');
+        </div>
+
+        <!-- Footer Section -->
+        <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+          <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+          <p style="margin:0 0 8px 0;">
+            123 Ikorodu Road, Lagos, Nigeria
+          </p>
+          <p style="margin:0 0 16px 0;">
+            Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+          </p>
+          <div style="margin-top:10px;">
+            <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+            <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+            <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+            <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+          </div>
+        </div>
+      </div>
+      `);
   } catch (err) {
     res.status(500).send('Failed to unsubscribe.');
   }
@@ -175,27 +190,107 @@ exports.removeSubscriber = async (req, res) => {
 };
 
 // Admin: Send newsletter
-exports.sendNewsletter = async (req, res) => {
-  const { subject, content, recipients } = req.body;
-  if (!subject || !content) return res.status(400).json({ error: 'Subject and content are required.' });
+exports.removeSubscriber = async (req, res) => {
   try {
-    let emails = recipients;
-    if (!emails || !emails.length) {
-      emails = (await NewsletterSubscriber.find({ isActive: true })).map(s => s.email);
-    }
-    const newsletter = await Newsletter.create({ subject, content, recipients: emails, sentAt: new Date(), sentBy: req.user?._id, status: 'sent' });
-    // Send email to all
-    await transporter.sendMail({
-      from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-      to: emails[0],
-      bcc: emails.length > 1 ? emails.slice(1) : undefined,
-      subject,
-      html: content
-    });
-    // Update lastNewsletterSentAt for subscribers
-    await NewsletterSubscriber.updateMany({ email: { $in: emails } }, { lastNewsletterSentAt: new Date() });
-    res.status(200).json({ message: 'Newsletter sent!', newsletter });
+    await NewsletterSubscriber.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: 'Subscriber removed.' });
   } catch (err) {
+    res.status(500).json({ error: 'Failed to remove subscriber.' });
+  }
+};
+
+// Admin: Send newsletter
+exports.sendNewsletter = async (req, res) => {
+  const { subject, content, recipients } = req.body; // Removed 'email' and 'name' from destructuring here
+  if (!subject || !content) return res.status(400).json({ error: 'Subject and content are required.' });
+
+  try {
+    let subscriberEmails = recipients; // Renamed to avoid confusion with single 'email' variable
+    let subscribersToEmail;
+
+    if (!subscriberEmails || !subscriberEmails.length) {
+      // Fetch all active subscribers if no specific recipients are provided
+      subscribersToEmail = await NewsletterSubscriber.find({ isActive: true });
+      subscriberEmails = subscribersToEmail.map(s => s.email);
+    } else {
+      // If specific recipients are provided, fetch their full subscriber objects
+      subscribersToEmail = await NewsletterSubscriber.find({ email: { $in: subscriberEmails }, isActive: true });
+    }
+
+    // --- Define the Newsletter Header HTML (remains static) ---
+    const headerHtml = `
+      <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+        <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+        <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
+      </div>
+    `;
+
+    // Record the newsletter being sent
+    const newsletterRecord = await Newsletter.create({ subject, content, recipients: subscriberEmails, sentAt: new Date(), sentBy: req.user?._id, status: 'sent' });
+
+    // Loop through each subscriber to send a personalized email
+    const sendPromises = subscribersToEmail.map(async (subscriber) => {
+      const personalizedName = subscriber.name || subscriber.email;
+      const unsubscribeToken = subscriber.unsubscribeToken; // Get the unique token for this subscriber
+      const unsubscribeUrl = `${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/api/newsletter/unsubscribe/${unsubscribeToken}`;
+
+      // --- Define the Newsletter Footer HTML (personalized unsubscribe link) ---
+      const footerHtml = `
+        <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+          <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+          <p style="margin:0 0 8px 0;">
+            123 Ikorodu Road, Lagos, Nigeria
+          </p>
+          <p style="margin:0 0 16px 0;">
+            Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+          </p>
+          <div style="margin-top:10px;">
+            <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+            <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+            <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+            <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+          </div>
+          <p style="font-size:0.8rem;color:#999;margin-top:20px;">
+            You are receiving this email because you subscribed to the Marshall Global Ventures newsletter.
+            To unsubscribe, please click <a href="${unsubscribeUrl}" style="color:#00B9F1;text-decoration:underline;">here</a>.
+          </p>
+        </div>
+      `;
+
+      // --- Construct the full HTML email template with personalization ---
+      const personalizedHtmlContent = `
+        <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+          ${headerHtml}
+          <!-- Newsletter Main Content Area -->
+          <div style="padding:32px 24px 24px 24px;color:#222;line-height:1.6;">
+            <p style="font-size:1.1rem;color:#222;margin-bottom:16px;">Hi ${personalizedName},</p>
+            ${content}
+          </div>
+          ${footerHtml}
+        </div>
+      `;
+
+      try {
+        await transporter.sendMail({
+          from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
+          to: subscriber.email, // Send to individual subscriber
+          subject, // Subject remains the same for all
+          html: personalizedHtmlContent // Use the personalized HTML
+        });
+        // Update lastNewsletterSentAt for this specific subscriber
+        await NewsletterSubscriber.updateOne({ _id: subscriber._id }, { lastNewsletterSentAt: new Date() });
+      } catch (emailErr) {
+        console.error(`Failed to send newsletter to ${subscriber.email}:`, emailErr.message);
+        // You might want to log this error or handle it (e.g., mark subscriber as bounced)
+      }
+    });
+
+    // Wait for all emails to attempt sending
+    await Promise.all(sendPromises);
+
+    res.status(200).json({ message: 'Newsletter sent!', newsletter: newsletterRecord });
+  } catch (err) {
+    console.error('Error sending newsletter:', err);
     res.status(500).json({ error: 'Failed to send newsletter.', details: err.message });
   }
 };
