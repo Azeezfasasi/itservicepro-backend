@@ -220,7 +220,7 @@ exports.requestPasswordReset = async (req, res) => {
             For security reasons, do not share this link with anyone.
           </p>
           <p style="margin-top:32px;color:#888;font-size:0.95rem;line-height:1.5;">Best regards,<br/>The Marshall Global Ventures Team</p>
-        </div>
+        </div> 
 
         <!-- Footer Section -->
         <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
