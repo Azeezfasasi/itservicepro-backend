@@ -279,7 +279,7 @@ exports.createOrder = async (req, res) => {
                 <!-- Body Section -->
                 <div style="padding:32px 24px 24px 24px;">
                   <h2 style="font-size:1.8rem;color:#00B9F1;margin-bottom:16px;">Hi Marshall Global Ventures, New Order Placed</h2>
-                  <p style="font-size:1.1rem;color:#222;margin-bottom:16px;">A new order has been placed by <strong>${customer.name || customer.email}</strong> (${customer.email}).</p>
+                  <p style="font-size:1.1rem;color:#222;margin-bottom:16px;">A new order has been placed by <strong>${user.name || user.email}</strong> (${user.email}).</p>
                   <p style="color:#222;line-height:1.5;margin-bottom:24px;">Order Number: <strong>${createdOrder.orderNumber}</strong></p>
                   
                   <h3>Order Summary</h3>
