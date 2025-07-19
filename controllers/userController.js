@@ -257,14 +257,12 @@ exports.resetPassword = async (req, res) => {
 
     if (!user) return res.status(400).json({ error: 'Invalid or expired token.' });
 
-    // Hash the new password before saving
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    user.password = newPassword;
 
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
 
-    await user.save();
+    await user.save(); 
     res.json({ message: 'Password has been reset successfully.' });
   } catch (err) {
     console.error('Error resetting password:', err);
