@@ -3,7 +3,7 @@ require('dotenv').config();
 const User = require('../models/User');
 
 const auth = async (req, res, next) => {
-  console.log('Auth called');
+  // console.log('Auth called');
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided.' });
@@ -19,7 +19,7 @@ const auth = async (req, res, next) => {
     }
     // Attach isAdmin for downstream checks
     req.user.isAdmin = req.user.role === 'admin' || req.user.role === 'super admin';
-    console.log(`Auth middleware: User ID ${req.user._id} attached to req.user. isAdmin: ${req.user.isAdmin}`);
+    // console.log(`Auth middleware: User ID ${req.user._id} attached to req.user. isAdmin: ${req.user.isAdmin}`);
     // req.user = decoded;
     next();
   } catch (err) {
@@ -35,7 +35,7 @@ const auth = async (req, res, next) => {
 };
 
 function authorizeRoles(req, res, next) {
-  console.log('authorizeRoles called');
+  // console.log('authorizeRoles called');
   if (req.user && (req.user.role === 'admin' || req.user.role === 'super admin')) {
     next();
   } else {
