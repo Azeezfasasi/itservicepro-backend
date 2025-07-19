@@ -2,6 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // Helper: generate JWT
@@ -246,20 +247,44 @@ exports.requestPasswordReset = async (req, res) => {
   }
 };
 
+// exports.resetPassword = async (req, res) => {
+//   const { token, password } = req.body;
+//   try {
+//     const user = await User.findOne({
+//       resetPasswordToken: token,
+//       resetPasswordExpires: { $gt: Date.now() }
+//     });
+//     if (!user) return res.status(400).json({ error: 'Invalid or expired token.' });
+//     user.password = password;
+//     user.resetPasswordToken = undefined;
+//     user.resetPasswordExpires = undefined;
+//     await user.save();
+//     res.json({ message: 'Password has been reset.' });
+//   } catch (err) {
+//     res.status(500).json({ error: 'Failed to reset password.', details: err.message });
+//   }
+// };
 exports.resetPassword = async (req, res) => {
-  const { token, password } = req.body;
+  const { token, newPassword } = req.body;
   try {
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() }
     });
+
     if (!user) return res.status(400).json({ error: 'Invalid or expired token.' });
-    user.password = password;
+
+    // Hash the new password before saving
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
+
     await user.save();
-    res.json({ message: 'Password has been reset.' });
+    res.json({ message: 'Password has been reset successfully.' });
   } catch (err) {
+    console.error('Error resetting password:', err);
     res.status(500).json({ error: 'Failed to reset password.', details: err.message });
   }
 };
