@@ -190,7 +190,6 @@ exports.requestPasswordReset = async (req, res) => {
           pass: process.env.EMAIL_PASS
         }
       });
-    // const resetUrl = `${process.env.FRONTEND_URL || 'https://itservicepro-backend.onrender.com'}/resetpassword/${token}`;
     const resetUrl = `${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/resetpassword/${token}`;
     await transporter.sendMail({
       to: user.email,
