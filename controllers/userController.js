@@ -45,7 +45,7 @@ exports.register = async (req, res) => {
       html: `
       <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
 
-        // Header section
+        <!-- Header section -->
         <div style="background:#00B9F1;padding:24px 0;text-align:center;">
             <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
             <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
@@ -98,7 +98,7 @@ exports.register = async (req, res) => {
         html: `
         <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
 
-          // Header section
+          <!-- Header section -->
           <div style="background:#00B9F1;padding:24px 0;text-align:center;">
               <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
               <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
@@ -170,13 +170,22 @@ exports.login = async (req, res) => {
 };
 
 exports.requestPasswordReset = async (req, res) => {
-  const { email } = req.body;
+  const { token, email } = req.body;
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: 'User not found.' });
     const token = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = token;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+
+     // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // Clear reset token fields
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
     await user.save();
 
     // Send email
@@ -189,13 +198,55 @@ exports.requestPasswordReset = async (req, res) => {
           pass: process.env.EMAIL_PASS
         }
       });
-    const resetUrl = `${process.env.FRONTEND_URL || 'https://itservicepro-backend.onrender.com'}/reset-password/${token}`;
+    // const resetUrl = `${process.env.FRONTEND_URL || 'https://itservicepro-backend.onrender.com'}/resetpassword/${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/resetpassword/${token}`;
     await transporter.sendMail({
       to: user.email,
       from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-      subject: 'Password Reset',
+      subject: `Password Reset for ${user.name || user.email}`,
       html: `
-      <p>You requested a password reset.</p><p>Click <a href="${resetUrl}">here</a> to reset your password. This link expires in 1 hour.</p>
+      <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
+
+        <!-- Header Section -->
+        <div style="background:#00B9F1;padding:24px 0;text-align:center;">
+          <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+        </div>
+
+        <!-- Body Section -->
+        <div style="padding:32px 24px 24px 24px;">
+          <p style="font-size:1.1rem;margin-bottom:16px;">Hi ${user.name || user.email},</p>
+          <h2 style="font-size:1.8rem;color:#00B9F1;margin-bottom:16px;">Password Reset Request for Your Account</h2>
+          <p style="font-size:1.1rem;margin-bottom:16px;">
+            We received a request to reset the password for your Marshall Global Ventures account.
+          </p>
+          <p style="color:#222;line-height:1.5;margin-bottom:24px;">
+            To reset your password, please click the button below. This link is valid for <strong>1 hour</strong> only.
+          </p>
+          <a href="${resetUrl}" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:1rem;box-shadow:0 4px 8px rgba(0, 185, 241, 0.2);">Reset Your Password</a>
+          <p style="font-size:0.95rem;color:#555;margin-top:32px;line-height:1.5;">
+            If you did not request a password reset, please ignore this email. Your password will remain unchanged.
+            For security reasons, do not share this link with anyone.
+          </p>
+          <p style="margin-top:32px;color:#888;font-size:0.95rem;line-height:1.5;">Best regards,<br/>The Marshall Global Ventures Team</p>
+        </div>
+
+        <!-- Footer Section -->
+        <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
+          <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
+          <p style="margin:0 0 8px 0;">
+            123 Ikorodu Road, Lagos, Nigeria
+          </p>
+          <p style="margin:0 0 16px 0;">
+            Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
+          </p>
+          <div style="margin-top:10px;">
+            <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
+            <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
+            <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
+            <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
+          </div>
+        </div>
+      </div>
       `
     });
     res.json({ message: 'Password reset email sent.' });
@@ -260,7 +311,8 @@ exports.updateProfile = async (req, res) => {
     delete updates.role; // Prevent role change
     delete updates.isActive; // Prevent self-disabling
     if (updates.password) delete updates.password; // Prevent password change here
-    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true }).select('-password');
+    // const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true }).select('-password');
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true });
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update profile.', details: err.message });

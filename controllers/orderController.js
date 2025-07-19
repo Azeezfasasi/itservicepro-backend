@@ -215,13 +215,14 @@ exports.createOrder = async (req, res) => {
             const adminEmails = getAdminEmails();
             const orderDetailsHtml = `
             <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
-                // Header section
+                
+                <!-- Header Section -->
                 <div style="background:#00B9F1;padding:24px 0;text-align:center;">
                     <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
                     <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
                 </div>
 
-                // Bodey section
+                <!-- Body Section -->
                 <div style="padding:32px 24px 24px 24px;">
                     <h2>Hi ${user.name}</h2>
                     <p>Thank you for placing your order with Marshall Global Ventures with order number: ${createdOrder.orderNumber}</p>
@@ -247,7 +248,7 @@ exports.createOrder = async (req, res) => {
                     <p>Marshall Global Ventures Team - <a href="https://mgv-tech.com">Visit our website for more details.</a></p>
                 </div>
 
-                // Footer section
+                <!-- Footer Section -->
                 <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
                     <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
                     <p style="margin:0 0 8px 0;">
@@ -269,13 +270,13 @@ exports.createOrder = async (req, res) => {
             const adminOrderNotificationHtml = `
               <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
                 
-                // Header section
+                <!-- Header Section -->
                 <div style="background:#00B9F1;padding:24px 0;text-align:center;">
                     <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
                     <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
                 </div>
 
-                // Body section
+                <!-- Body Section -->
                 <div style="padding:32px 24px 24px 24px;">
                   <h2 style="font-size:1.8rem;color:#00B9F1;margin-bottom:16px;">Hi Marshall Global Ventures, New Order Placed</h2>
                   <p style="font-size:1.1rem;color:#222;margin-bottom:16px;">A new order has been placed by <strong>${customer.name || customer.email}</strong> (${customer.email}).</p>
@@ -300,7 +301,7 @@ exports.createOrder = async (req, res) => {
                   <p style="margin-top:16px;color:#888;font-size:0.95rem;line-height:1.5;">Marshall Global Ventures</p>
                 </div>
                 
-                // Footer section
+                <!-- Footer Section -->
                 <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
                     <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
                     <p style="margin:0 0 8px 0;">
@@ -431,7 +432,7 @@ exports.updateOrderToDelivered = async (req, res) => {
             const orderDetailsHtml = `
             <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
 
-                // Header section
+                <!-- Header Section -->
                 <div style="background:#00B9F1;padding:24px 0;text-align:center;">
                     <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
                     <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
@@ -467,7 +468,7 @@ exports.updateOrderToDelivered = async (req, res) => {
             const adminOrderDetailsHtml = `
             <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
 
-                // Header section
+                <!-- Header section -->
                 <div style="background:#00B9F1;padding:24px 0;text-align:center;">
                     <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
                     <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
@@ -577,7 +578,7 @@ exports.updateOrderStatus = async (req, res) => {
             const orderDetailsHtml = `
             <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
 
-                // Header section
+                <!-- Header section -->
                 <div style="background:#00B9F1;padding:24px 0;text-align:center;">
                     <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
                     <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
@@ -624,7 +625,7 @@ exports.updateOrderStatus = async (req, res) => {
             const AdminOrderDetailsHtml = `
             <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
 
-                // Header section
+                <!-- Header section -->
                 <div style="background:#00B9F1;padding:24px 0;text-align:center;">
                     <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
                     <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
