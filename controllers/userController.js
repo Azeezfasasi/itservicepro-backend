@@ -170,7 +170,7 @@ exports.login = async (req, res) => {
 };
 
 exports.requestPasswordReset = async (req, res) => {
-  const { token, email } = req.body;
+  const { email } = req.body;
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: 'User not found.' });
