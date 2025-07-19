@@ -61,7 +61,7 @@ exports.subscribe = async (req, res) => {
           <p style="font-size:1.1rem;color:#222;margin-bottom:16px;">Thank you for subscribing to our newsletter! &#127881;</p>
           <p style="color:#222;line-height:1.5;margin-bottom:24px;">You will now receive the latest updates, exclusive offers, and expert tips from our team, directly to your inbox. We're excited to have you with us!</p>
           <a href="https://mgv-tech.com" style="display:inline-block;margin:18px 0 0 0;padding:12px 28px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:1rem;box-shadow:0 4px 8px rgba(0, 185, 241, 0.2);">Visit Our Website</a>
-          <p style="font-size:0.95rem;color:#555;margin-top:32px;line-height:1.5;">If you did not subscribe to this newsletter, please ignore this email. If you believe this is an error or wish to stop receiving these emails, you can <a href="${unsubscribeUrl}" style="color:#00B9F1;text-decoration:underline;">unsubscribe here</a> at any time.</p>
+          <p style="font-size:0.95rem;color:#555;margin-top:32px;line-height:1.5;">If you did not subscribe to this newsletter, please ignore this email. If you believe this is an error or wish to stop receiving these emails, you can <a href="https://mgv-tech.com'/app/unsubscribenewsletter/${unsubscribeToken}" style="color:#00B9F1;text-decoration:underline;">unsubscribe here</a> at any time.</p>
           <p style="margin-top:32px;color:#888;font-size:0.95rem;line-height:1.5;">Best regards,<br/>The Marshall Global Ventures Team</p>
         </div>
 
