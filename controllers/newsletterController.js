@@ -42,7 +42,7 @@ exports.subscribe = async (req, res) => {
       subscriber = await NewsletterSubscriber.create({ email, name, unsubscribeToken });
     }
     // Send confirmation email to subscriber
-    const unsubscribeUrl = `${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/unsubscribe/${unsubscribeToken}`;
+    const unsubscribeUrl = `${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/app/unsubscribenewsletter/${unsubscribeToken}`;
     await transporter.sendMail({
       to: email,
       from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
