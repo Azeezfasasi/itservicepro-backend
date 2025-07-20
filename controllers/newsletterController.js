@@ -51,7 +51,6 @@ exports.subscribe = async (req, res) => {
       <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
         <!-- Header Section -->
         <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-          <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
           <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Welcome to Marshall Global Ventures!</h1>
         </div>
 
@@ -108,56 +107,6 @@ exports.unsubscribe = async (req, res) => {
   }
 };
 
-// Unsubscribe by token (GET)
-// exports.unsubscribeByToken = async (req, res) => {
-//   const { token } = req.params;
-//   if (!token) return res.status(400).send('Invalid unsubscribe link.');
-//   try {
-//     const subscriber = await NewsletterSubscriber.findOne({ unsubscribeToken: token, isActive: true });
-//     if (!subscriber) {
-//       return res.status(404).send('Subscriber not found or already unsubscribed.');
-//     }
-//     subscriber.isActive = false;
-//     subscriber.unsubscribedAt = new Date();
-//     // Optionally clear token to prevent reuse
-//     // subscriber.unsubscribeToken = undefined;
-//     await subscriber.save();
-//     res.send(`
-//       <div style="max-width:580px;margin:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;overflow:hidden;font-family:'Inter',sans-serif;">
-//         <!-- Header Section -->
-//         <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-//           <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
-//         </div>
-
-//         <!-- Body Section -->
-//         <div style="padding:32px 24px 24px 24px;">
-//           <h2 style="color:#00B9F1;">You have been unsubscribed.</h2>
-//           <p style="color:#444;">You will no longer receive our newsletters.</p>
-//           <a href="https://mgv-tech.com" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#00B9F1;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Return to Website</a></div>');
-//         </div>
-
-//         <!-- Footer Section -->
-//         <div style="background:#f0f0f0;padding:24px;text-align:center;color:#666;font-size:0.85rem;line-height:1.6;border-top:1px solid #e5e5e5;">
-//           <p style="margin:0 0 8px 0;">&copy; 2025 Marshall Global Ventures. All rights reserved.</p>
-//           <p style="margin:0 0 8px 0;">
-//             123 Ikorodu Road, Lagos, Nigeria
-//           </p>
-//           <p style="margin:0 0 16px 0;">
-//             Email: <a href="mailto:info@mgv-tech.com" style="color:#00B9F1;text-decoration:none;">info@mgv-tech.com</a> | Phone: <a href="tel:+2348103069432" style="color:#00B9F1;text-decoration:none;">(+234) 08103069432</a>
-//           </p>
-//           <div style="margin-top:10px;">
-//             <a href="https://linkedin.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">LinkedIn</a> |
-//             <a href="https://instagram.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Instagram</a> |
-//             <a href="https://tiktok.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">TikTok</a> |
-//             <a href="https://facebook.com" style="color:#00B9F1;text-decoration:none;margin:0 8px;">Facebook</a>
-//           </div>
-//         </div>
-//       </div>
-//       `);
-//   } catch (err) {
-//     res.status(500).send('Failed to unsubscribe.');
-//   }
-// };
 exports.unsubscribeByToken = async (req, res) => {
   const { token } = req.params;
   if (!token) {
@@ -244,7 +193,6 @@ exports.sendNewsletter = async (req, res) => {
     // --- Define the Newsletter Header HTML (remains static) ---
     const headerHtml = `
       <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-        <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
         <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
       </div>
     `;
@@ -256,7 +204,7 @@ exports.sendNewsletter = async (req, res) => {
     const sendPromises = subscribersToEmail.map(async (subscriber) => {
       const personalizedName = subscriber.name || subscriber.email;
       const unsubscribeToken = subscriber.unsubscribeToken; // Get the unique token for this subscriber
-      const unsubscribeUrl = `${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/api/newsletter/unsubscribe/${unsubscribeToken}`;
+      const unsubscribeUrl = `${process.env.FRONTEND_URL || 'https://mgv-tech.com'}/app/unsubscribenewsletter/${unsubscribeToken}`;
 
       // --- Define the Newsletter Footer HTML (personalized unsubscribe link) ---
       const footerHtml = `
@@ -276,7 +224,7 @@ exports.sendNewsletter = async (req, res) => {
           </div>
           <p style="font-size:0.8rem;color:#999;margin-top:20px;">
             You are receiving this email because you subscribed to the Marshall Global Ventures newsletter.
-            To unsubscribe, please click <a href="${unsubscribeUrl}" style="color:#00B9F1;text-decoration:underline;">here</a>.
+            To unsubscribe, please click <a href="https://mgv-tech.com/app/unsubscribenewsletter/${unsubscribeToken}" style="color:#00B9F1;text-decoration:underline;">here</a>.
           </p>
         </div>
       `;

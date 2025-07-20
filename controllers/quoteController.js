@@ -42,7 +42,6 @@ exports.sendQuoteRequest = async (req, res) => {
 
         // Header section
         <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-            <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
             <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
         </div>
 
@@ -87,7 +86,6 @@ exports.sendQuoteRequest = async (req, res) => {
 
         // Header section
         <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-            <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
             <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
         </div>
 
@@ -209,7 +207,6 @@ exports.assignQuoteToAdmin = async (req, res) => {
     // --- Reusable Header HTML ---
     const emailHeaderHtml = `
       <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-        <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
         <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
       </div>
     `;
@@ -385,7 +382,6 @@ exports.updateQuoteRequest = async (req, res) => {
     // --- Reusable Header HTML ---
     const emailHeaderHtml = `
       <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-        <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
         <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
       </div>
     `;
@@ -504,7 +500,6 @@ exports.adminReplyToQuoteRequest = async (req, res) => {
     // --- Reusable Header HTML ---
     const emailHeaderHtml = `
       <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-        <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
         <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
       </div>
     `;
@@ -608,88 +603,6 @@ exports.adminReplyToQuoteRequest = async (req, res) => {
   }
 };
 
-// exports.customerReplyToQuote = async (req, res) => {
-//   const { id } = req.params;
-//   const { replyMessage } = req.body;
-
-//   if (!replyMessage) {
-//     return res.status(400).json({ error: 'Reply message is required.' });
-//   }
-
-//   try {
-//     const quote = await QuoteRequest.findById(id);
-//     if (!quote) {
-//       return res.status(404).json({ error: 'Quote request not found.' });
-//     }
-
-//     if (!req.user || req.user.email !== quote.email) {
-//       return res.status(403).json({ error: 'Unauthorized: You can only reply to your own quotes.' });
-//     }
-
-//     const customerEmail = req.user.email;
-//     const customerId = req.user.id;
-
-//     const newReply = {
-//       senderId: customerId,
-//       senderEmail: customerEmail,
-//       senderType: 'customer',
-//       message: replyMessage,
-//       repliedAt: new Date()
-//     };
-//     quote.replies.push(newReply);
-//     await quote.save();
-
-//     const updatedAndPopulatedQuote = await QuoteRequest.findById(id)
-//       .populate('replies.senderId', 'name')
-//       .populate('assignedTo', 'name email')
-//       .exec();
-
-//     // Send email notification to admins about the customer's reply
-//     const adminEmails = getAdminEmails();
-//     // CHANGED: Use transporter.sendMail directly
-//     await transporter.sendMail({
-//       to: adminEmails[0] || process.env.RECEIVER_EMAIL,
-//       cc: adminEmails.length > 1 ? adminEmails.slice(1) : undefined,
-//       from: `"${quote.name}" <${quote.email}>`,
-//       subject: `Customer Reply to Quote Request #${id} from ${quote.name}`,
-//       html: `<p><strong>Hello Admin,</strong></p>
-//              <p>A customer has replied to their quote request:</p>
-//              <p><strong>Quote ID:</strong> ${id}</p>
-//              <p><strong>Customer:</strong> ${quote.name} (${quote.email})</p>
-//              <p><strong>Service:</strong> ${quote.service}</p>
-//              <p><strong>Reply Message:</strong></p>
-//              <div style="background-color: #f0f4f8; padding: 15px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px;">
-//                <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
-//              </div>
-//              <p>Please <a href="https://mgv-tech.com/login">log in</a> to your admin dashboard to view the full conversation.</p>`
-//     });
-
-//     // Optionally send a confirmation to the customer that their reply was received
-//     // CHANGED: Use transporter.sendMail directly
-//     await transporter.sendMail({
-//       to: customerEmail,
-//       from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-//       subject: `Your Reply to Quote Request for ${quote.service} Has Been Sent`,
-//       html: `<h2>Your Reply Has Been Sent!</h2>
-//              <p>Dear ${quote.name},</p>
-//              <p>We have received your reply to your quote request for <strong>${quote.service}</strong>:</p>
-//              <div style="background-color: #f0f4f8; padding: 15px; border-radius: 8px; margin-top: 10px; margin-bottom: 20px;">
-//                <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
-//              </div>
-//              <p>Our team will review your message and get back to you shortly.</p>
-//              <p>Kind regards,<br/><strong>Marshall Global Ventures Team</strong></p>`
-//     });
-
-//     res.status(200).json({
-//       message: 'Reply sent and saved successfully!',
-//       updatedQuote: updatedAndPopulatedQuote
-//     });
-//   } catch (err) {
-//     console.error('Error replying to quote (customer):', err);
-//     res.status(500).json({ error: 'Failed to send reply.', details: err.message });
-//   }
-// };
-
 exports.customerReplyToQuote = async (req, res) => {
   const { id } = req.params;
   const { replyMessage } = req.body;
@@ -731,7 +644,6 @@ exports.customerReplyToQuote = async (req, res) => {
     // --- Reusable Header HTML ---
     const emailHeaderHtml = `
       <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-        <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
         <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
       </div>
     `;

@@ -48,7 +48,6 @@ exports.register = async (req, res) => {
 
         <!-- Header section -->
         <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-            <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
             <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
         </div>
 
@@ -101,7 +100,6 @@ exports.register = async (req, res) => {
 
           <!-- Header section -->
           <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-              <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
               <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures!</h1>
           </div>
 
@@ -200,7 +198,7 @@ exports.requestPasswordReset = async (req, res) => {
 
         <!-- Header Section -->
         <div style="background:#00B9F1;padding:24px 0;text-align:center;">
-          <img src="https://mgv-tech.com/mgvfavicon.png" alt="Marshall Global Ventures Logo" style="height:60px;margin-bottom:8px;display:inline-block;" />
+          <h1 style="color:#fff;margin:0;font-size:2.2rem;font-weight:700;line-height:1.2;">Marshall Global Ventures</h1>
         </div>
 
         <!-- Body Section -->
