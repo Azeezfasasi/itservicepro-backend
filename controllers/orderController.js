@@ -173,8 +173,7 @@ exports.createOrder = async (req, res) => {
         const orderNumber = formatOrderNumber(sequenceNumber);
         console.log('Order Controller: Generated Order Number:', orderNumber);
         // --- END GENERATION ---
-
-
+        
         const newOrder = new Order({
             userId: req.user._id,
             orderNumber: orderNumber,

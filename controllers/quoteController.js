@@ -370,31 +370,6 @@ exports.deleteQuoteRequest = async (req, res) => {
   }
 };
 
-// exports.updateQuoteRequest = async (req, res) => {
-//   try {
-//     const updated = await QuoteRequest.findByIdAndUpdate(
-//       req.params.id,
-//       req.body,
-//       { new: true }
-//     ).populate('assignedTo', 'name email');
-
-//     if (updated && updated.email) {
-//       const statusText = req.body.status ? `<p><strong>Status:</strong> ${req.body.status}</p>` : '';
-//       const detailsText = Object.keys(req.body).filter(k => k !== 'status').map(k => `<p><strong>${k}:</strong> ${req.body[k]}</p>`).join('');
-//       // CHANGED: Use transporter.sendMail directly
-//       await transporter.sendMail({
-//         to: updated.email,
-//         from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-//         subject: 'Your Quote Request Has Been Updated',
-//         html: `<h2>Your Quote Request Update</h2>${statusText}${detailsText}<p>If you have questions, reply to this email.</p>`
-//       });
-//     }
-//     res.status(200).json(updated);
-//   } catch (err) {
-//     console.error('Error updating quotes:', err);
-//     res.status(500).json({ error: 'Failed to update quote request.' });
-//   }
-// };
 exports.updateQuoteRequest = async (req, res) => {
   try {
     const updated = await QuoteRequest.findByIdAndUpdate(
@@ -487,63 +462,6 @@ exports.updateQuoteRequest = async (req, res) => {
   }
 };
 
-
-// exports.adminReplyToQuoteRequest = async (req, res) => {
-//   const { id } = req.params;
-//   const { replyMessage } = req.body;
-
-//   if (!replyMessage) {
-//     return res.status(400).json({ error: 'Reply message is required.' });
-//   }
-
-//   try {
-//     const quote = await QuoteRequest.findById(id);
-//     if (!quote) {
-//       return res.status(404).json({ error: 'Quote request not found.' });
-//     }
-
-//     const adminEmail = req.user.email;
-//     const adminId = req.user.id;
-
-//     const newReply = {
-//       senderId: adminId,
-//       senderEmail: adminEmail,
-//       senderType: 'admin',
-//       message: replyMessage,
-//       repliedAt: new Date()
-//     };
-//     quote.replies.push(newReply);
-//     await quote.save();
-
-//     const updatedAndPopulatedQuote = await QuoteRequest.findById(id)
-//       .populate('replies.senderId', 'name')
-//       .populate('assignedTo', 'name email')
-//       .exec();
-
-//     // CHANGED: Use transporter.sendMail directly
-//     await transporter.sendMail({
-//       to: quote.email,
-//       from: `"Marshall Global Ventures" <${process.env.EMAIL_USER}>`,
-//       subject: `Reply to your Quote Request for ${quote.service} from Marshall Global Ventures`,
-//       html: `<h2>Regarding your Quote Request for ${quote.service}</h2>
-//              <p>Dear ${quote.name},</p>
-//              <p>Thank you for your interest in Marshall Global Ventures. We are replying to your quote request with the following message:</p>
-//              <div style="background-color: #f0f4f8; padding: 15px; border-radius: 8px; margin-top: 20px; margin-bottom: 20px;">
-//                <p style="white-space: pre-line; margin: 0;">${replyMessage}</p>
-//              </div>
-//              <p>If you have any further questions or require additional information, please do not hesitate to respond to this email.</p>
-//              <p>Kind regards,<br/><strong>Marshall Global Ventures Team</strong></p>`
-//     });
-
-//     res.status(200).json({
-//       message: 'Reply sent and saved successfully!',
-//       updatedQuote: updatedAndPopulatedQuote
-//     });
-//   } catch (err) {
-//     console.error('Error replying to quote (admin):', err);
-//     res.status(500).json({ error: 'Failed to send reply.', details: err.message });
-//   }
-// };
 exports.adminReplyToQuoteRequest = async (req, res) => {
   const { id } = req.params;
   const { replyMessage } = req.body;
