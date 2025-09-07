@@ -3,15 +3,20 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
-const productRoutes = require('./routes/productRoutes');
-const categoryRoutes = require('./routes/categoryRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
 const blogRoutes = require('./routes/blogRoutes');
-const cartRoutes = require('./routes/cartRoutes');
-const wishlistRoutes = require('./routes/wishlistRoutes');
-const orderRoutes = require('./routes/orderRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
-const projectRoutes = require('./routes/projectRoutes');
+const hostelRoutes = require('./routes/hostelRoutes');
+const roomRoutes = require('./routes/roomRoutes');
+const bedSpaceRoutes = require('./routes/bedSpaceRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const complaintRoutes = require('./routes/complaintRoutes');
+const maintenanceRoutes = require('./routes/maintenanceRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const announcementRoutes = require('./routes/announcementRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes.js');
+const disciplinaryRoutes = require('./routes/disciplinaryRoutes.js');
 require('dotenv').config();
 
 const app = express();
@@ -20,8 +25,6 @@ const PORT = process.env.PORT || 5000;
 // CORS middleware (must be before any other middleware/routes)
 app.use(cors({
   origin: [
-    'https://itservicepro.netlify.app',
-    'https://mgv-tech.com',
     'http://localhost:5173'
   ], // your frontend URL
   credentials: true, // if you use cookies/auth
@@ -41,20 +44,25 @@ mongoose.connect(process.env.MONGODB_URI)
   });
 
 app.use(express.json());
-
+ 
 app.use('/api/users', userRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes);
 app.use('/api', quoteRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/newsletter', newsletterRoutes);
-app.use('/api/projects', projectRoutes);
+app.use('/api/room', roomRoutes);
+app.use('/api/hostel', hostelRoutes);
+app.use('/api/bedspace', bedSpaceRoutes);
+app.use('/api/booking', bookingRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/complaint', complaintRoutes)
+app.use('/api/notification', notificationRoutes)
+app.use('/api/announcement', announcementRoutes)
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/disciplinary', disciplinaryRoutes);
 
 app.get('/', (req, res) => {
-  res.send('Marshall Global Ventures Backend Running');
+  res.send('Hostel Management System Backend Running');
 });
 
 app.listen(PORT, () => {
